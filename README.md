@@ -172,7 +172,7 @@ ansible-galaxy install -r requirements.yml
 
 **Proxmox VE**
 
-- Version 8.x recommandée
+- Version 8.x minimum recommandée
 - Réseau : bridge `vmbr0` configuré, accès SSH depuis le poste Ansible
 - Stockage : LVM-thin ou ZFS (thin provisioning recommandé)
 
@@ -326,10 +326,3 @@ soit moins bien maintenues.
 ## Licence
 
 GPL-3.0 — voir [LICENSE](LICENSE).
-
----
-
-## Auteur
-
-**Frédéric** — Administrateur système Linux  
-Intégration FreeIPA · SELinux · Ansible · Proxmox VE
