@@ -1,0 +1,34 @@
+# /etc/chrony.conf
+# Géré par Ansible — rôle common
+# Ne pas modifier manuellement.
+
+{% for server in common_ntp_servers %}
+server {{ server }}{% if common_ntp_iburst %} iburst{% endif %}
+
+{% endfor %}
+
+driftfile /var/lib/chrony/drift
+makestep 1.0 3
+rtcsync
+hwtimestamp *
+keyfile /etc/chrony.keys
+logdir /var/log/chrony
+
+{% if common_ntp_serve %}
+# -------------------------------------------------------------------------
+# Mode serveur NTP — actif sur ipa01 uniquement (réseau isolé).
+# Les autres VMs pointent vers ipa01 comme source NTP après son déploiement.
+# -------------------------------------------------------------------------
+
+# Autoriser le réseau interne à interroger ce serveur
+allow {{ common_ntp_serve_network }}
+
+# Source locale de fallback : si ipa01 perd sa propre synchronisation,
+# il continue à servir l'heure au réseau avec un stratum dégradé.
+# Évite que les tickets Kerberos des autres VMs expirent lors d'une
+# coupure réseau temporaire.
+local stratum {{ common_ntp_local_stratum }}
+{% else %}
+# Mode client pur — aucune requête NTP entrante acceptée
+port 0
+{% endif %}

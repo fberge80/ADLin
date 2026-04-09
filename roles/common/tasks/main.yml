@@ -1,0 +1,20 @@
+---
+- name: "common | SELinux enforcing"
+  ansible.builtin.import_tasks: selinux.yml
+  tags: [common, selinux]
+
+- name: "common | Paquets de base et dépôt EPEL"
+  ansible.builtin.import_tasks: packages.yml
+  tags: [common, packages]
+
+- name: "common | Synchronisation NTP (chrony)"
+  ansible.builtin.import_tasks: chrony.yml
+  tags: [common, chrony, ntp]
+  when: common_manage_ntp | bool
+  # Désactivé sur ipaservers : FreeIPA server installer gère chrony lui-même
+
+- name: "common | Enrollment FreeIPA client"
+  ansible.builtin.import_tasks: freeipa_client.yml
+  tags: [common, freeipa, ipa]
+  when: common_ipa_enroll | bool
+  # Désactivé sur ipaservers : ipa01 est le serveur, pas un client

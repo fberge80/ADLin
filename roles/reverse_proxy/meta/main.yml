@@ -1,0 +1,17 @@
+---
+galaxy_info:
+  author: "Frédéric"
+  description: "Reverse proxy Nginx avec TLS FreeIPA/certmonger pour le projet ADLin"
+  license: "MIT"
+  min_ansible_version: "2.15"
+  platforms:
+    - name: EL
+      versions:
+        - "9"
+
+# Dépendance implicite (non enforced par Ansible, documentée ici) :
+#   - ipa01.adlin.lab doit être déployé et opérationnel
+#   - proxy01 doit être enrollé comme client FreeIPA (common_ipa_enroll: true)
+#   - Le groupe HTTP/proxy01.adlin.lab doit exister dans FreeIPA
+#     (créé par la tâche ipa_service.yml de ce rôle)
+dependencies: []

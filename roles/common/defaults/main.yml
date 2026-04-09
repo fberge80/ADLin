@@ -1,0 +1,71 @@
+---
+# roles/common/defaults/main.yml
+#
+# Variables par défaut du rôle common.
+# Toutes ces valeurs sont surchargeables depuis group_vars ou host_vars.
+
+# -----------------------------------------------------------------------------
+# Paquets
+# -----------------------------------------------------------------------------
+
+common_packages:
+  - vim-enhanced
+  - curl
+  - wget
+  - bind-utils         # dig, nslookup — indispensable avec FreeIPA/DNS
+  - net-tools          # ss, netstat — utiles pour le dépannage
+  - bash-completion
+  - firewalld
+  - chrony
+  - python3-libselinux  # requis par le module ansible.posix.selinux
+  - python3-libsemanage # requis par semanage (contextes SELinux)
+
+common_services_disabled:
+  - bluetooth
+  - avahi-daemon        # mDNS : non pertinent en environnement contrôlé
+  - cups                # impression : hors périmètre serveur
+
+# -----------------------------------------------------------------------------
+# SELinux
+# -----------------------------------------------------------------------------
+
+common_selinux_state: enforcing
+common_selinux_policy: targeted
+
+# -----------------------------------------------------------------------------
+# NTP / Chrony
+# -----------------------------------------------------------------------------
+
+common_ntp_servers:
+  - 0.fr.pool.ntp.org
+  - 1.fr.pool.ntp.org
+  - 2.fr.pool.ntp.org
+
+common_ntp_iburst: true
+
+# Mode serveur NTP — désactivé par défaut (mode client pur).
+# Activé sur ipa01 via group_vars/ipaservers.yml.
+common_ntp_serve: false
+common_ntp_serve_network: "10.10.10.0/24"
+common_ntp_local_stratum: 5
+
+# Ajout en fin de fichier — après la section NTP existante
+
+# Contrôle la gestion de chrony par ce rôle.
+# Positionné à false sur ipa01 (cf. group_vars/ipaservers.yml) car
+# FreeIPA server installer gère chrony directement.
+common_manage_ntp: true
+
+# -----------------------------------------------------------------------------
+# Enrollment FreeIPA client
+# -----------------------------------------------------------------------------
+
+common_ipa_enroll: false
+
+ipa_domain: "adlin.lab"
+ipa_realm: "ADLIN.LAB"
+ipa_server: "ipa01.adlin.lab"
+
+ipaclient_mkhomedir: true
+ipaclient_no_nisdomain: true
+ipaclient_force_join: false

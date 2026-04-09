@@ -1,0 +1,19 @@
+---
+# roles/reverse_proxy/tasks/firewalld.yml
+#
+# Le reverse proxy n'expose QUE HTTP et HTTPS vers l'extérieur.
+# Le trafic vers les upstreams (10.10.10.x) est interne au bridge vmbr1.
+
+- name: "firewalld | Autoriser HTTP (redirect vers HTTPS)"
+  ansible.posix.firewalld:
+    service: http
+    permanent: true
+    state: enabled
+    immediate: true
+
+- name: "firewalld | Autoriser HTTPS"
+  ansible.posix.firewalld:
+    service: https
+    permanent: true
+    state: enabled
+    immediate: true

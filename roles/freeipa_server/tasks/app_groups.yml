@@ -1,0 +1,23 @@
+---
+# roles/freeipa_server/tasks/app_groups.yml
+#
+# Création des groupes POSIX applicatifs dans FreeIPA via la collection officielle.
+#
+# Ces groupes servent à contrôler l'accès par service : chaque application
+# filtre ses utilisateurs LDAP avec (&(objectclass=posixAccount)(memberOf=cn=<groupe>,...)).
+# L'administrateur FreeIPA ajoute/retire des utilisateurs de ces groupes pour
+# accorder ou révoquer l'accès à un service, sans toucher à la configuration
+# de l'application elle-même.
+
+- name: "app_groups | Créer les groupes applicatifs FreeIPA"
+  freeipa.ansible_freeipa.ipagroup:
+    ipaadmin_password: "{{ vault_ipa_admin_password }}"
+    name: "{{ item.name }}"
+    description: "{{ item.description }}"
+    # posix: true crée un groupe POSIX avec gidNumber — requis pour les filtres
+    # objectclass=posixGroup utilisés par Nextcloud, Dovecot et Rocket.Chat
+    posix: true
+    state: present
+  loop: "{{ freeipa_app_groups }}"
+  loop_control:
+    label: "{{ item.name }}"

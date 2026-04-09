@@ -1,0 +1,36 @@
+---
+# roles/reverse_proxy/tasks/vhosts.yml
+
+- name: "vhosts | Déployer les paramètres TLS partagés"
+  ansible.builtin.template:
+    src: ssl_params.conf.j2
+    dest: "{{ nginx_vhosts_dir }}/00-ssl_params.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Recharger nginx
+  # Préfixe 00- : chargé en premier, avant les vhosts
+
+- name: "vhosts | Déployer la configuration de chaque vhost"
+  ansible.builtin.template:
+    src: vhost.conf.j2
+    dest: "{{ nginx_vhosts_dir }}/{{ vhost.name }}.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ reverse_proxy_vhosts }}"
+  loop_control:
+    loop_var: vhost
+    label: "{{ vhost.fqdn }}"
+  notify: Recharger nginx
+
+- name: "vhosts | Supprimer la page par défaut nginx (évite conflits vhost)"
+  ansible.builtin.file:
+    path: /etc/nginx/conf.d/default.conf
+    state: absent
+  notify: Recharger nginx
+
+- name: "vhosts | Valider la configuration nginx avant reload"
+  ansible.builtin.command: nginx -t
+  changed_when: false
+  # Échoue si une erreur de syntaxe est présente — protège contre un reload cassé

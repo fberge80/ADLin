@@ -1,0 +1,23 @@
+---
+# playbooks/01-freeipa-server.yml
+#
+# Déploie FreeIPA Server sur ipa01.adlin.lab.
+#
+# Prérequis :
+#   - 00-common.yml exécuté avec succès sur ipa01
+#   - vault.yml chiffré et .vault_pass présent
+#   - RAM disponible : 4 Go minimum (Dogtag/PKI est gourmand à l'installation)
+#
+# Durée estimée : 10 à 15 minutes (PKI Dogtag + KRA)
+#
+# Utilisation :
+#   ansible-playbook playbooks/01-freeipa-server.yml --vault-password-file .vault_pass
+#   ansible-playbook playbooks/01-freeipa-server.yml --tags firewalld   # firewalld seul
+#   ansible-playbook playbooks/01-freeipa-server.yml --tags service_accounts
+
+- name: "Déploiement FreeIPA Server — ipa01.adlin.lab"
+  hosts: ipaservers
+  become: true
+
+  roles:
+    - role: freeipa_server

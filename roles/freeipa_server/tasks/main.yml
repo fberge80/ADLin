@@ -1,0 +1,22 @@
+---
+# roles/freeipa_server/tasks/main.yml
+
+- name: "freeipa_server | Hostname"
+  ansible.builtin.import_tasks: hostname.yml
+  tags: [freeipa_server, hostname]
+
+- name: "freeipa_server | Firewalld — ports FreeIPA"
+  ansible.builtin.import_tasks: firewalld.yml
+  tags: [freeipa_server, firewalld]
+
+- name: "freeipa_server | Installation FreeIPA server"
+  ansible.builtin.import_tasks: ipaserver.yml
+  tags: [freeipa_server, install]
+
+- name: "freeipa_server | Comptes de service LDAP"
+  ansible.builtin.import_tasks: service_accounts.yml
+  tags: [freeipa_server, ldap, service_accounts]
+
+- name: "freeipa_server | Groupes applicatifs"
+  ansible.builtin.import_tasks: app_groups.yml
+  tags: [freeipa_server, ldap, groups]

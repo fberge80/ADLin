@@ -1,0 +1,39 @@
+---
+# roles/common/tasks/chrony.yml
+#
+# Chrony est l'implémentation NTP par défaut sur Rocky Linux 9 (remplace ntpd).
+# Il est particulièrement important pour FreeIPA/Kerberos : un écart d'horloge
+# supérieur à 5 minutes entre le client et le serveur KDC invalide les tickets
+# Kerberos (erreur KRB5KRB_AP_ERR_SKEW).
+#
+# Stratégie de configuration en deux temps :
+#   Phase 1 (avant IPA) : serveurs NTP publics (pool.ntp.org)
+#   Phase 2 (après IPA) : surcharger common_ntp_servers avec ipa01.adlin.lab
+#                         dans group_vars/all/vars.yml
+
+- name: "chrony | Déployer la configuration chrony"
+  ansible.builtin.template:
+    src: chrony.conf.j2
+    dest: /etc/chrony.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Redémarrer chrony
+
+- name: "chrony | Démarrer et activer chronyd"
+  ansible.builtin.systemd:
+    name: chronyd
+    state: started
+    enabled: true
+
+# Vérification non bloquante — utile pour le débogage en CI/pipeline
+- name: "chrony | Vérifier la synchronisation NTP"
+  ansible.builtin.command: chronyc tracking
+  register: chrony_tracking
+  changed_when: false
+  failed_when: false  # Ne pas bloquer si NTP n'est pas encore stable
+
+- name: "chrony | Afficher l'état de synchronisation"
+  ansible.builtin.debug:
+    msg: "{{ chrony_tracking.stdout_lines }}"
+  when: chrony_tracking.rc == 0

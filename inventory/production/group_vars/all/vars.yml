@@ -1,0 +1,47 @@
+# inventory/production/group_vars/all/vars.yml
+# Variables publiques — pas de secrets ici.
+# Les variables vault_* sont définies dans vault.yml (chiffré).
+
+# -----------------------------------------------------------------------------
+# FreeIPA — identité centrale
+# -----------------------------------------------------------------------------
+ipa_domain: "adlin.lab"
+ipa_realm: "ADLIN.LAB"           # Kerberos realm — toujours majuscules
+ipa_server: "ipa01.adlin.lab"
+
+freeipa_base_dn: "dc=adlin,dc=lab"
+freeipa_ldap_uri: "ldaps://ipa01.adlin.lab"
+
+# Indirection vault — nom propre sans préfixe vault_ pour les rôles
+ipa_admin_password: "{{ vault_ipa_admin_password }}"
+
+# -----------------------------------------------------------------------------
+# NTP — Phase 2 : FreeIPA comme source de temps interne
+# Surchargé dans group_vars/ipaservers.yml pour ipa01 lui-même
+# (ipa01 NE doit PAS se pointer comme source NTP)
+# -----------------------------------------------------------------------------
+common_ntp_servers:
+  - ipa01.adlin.lab
+
+# Activation par défaut — surchargé à false dans group_vars/ipaservers.yml
+# car FreeIPA server gère son propre chrony
+common_manage_ntp: true
+
+# -----------------------------------------------------------------------------
+# Enrollment IPA client — activé maintenant que FreeIPA est opérationnel
+# Surchargé à false dans group_vars/ipaservers.yml (ipa01 est le serveur)
+# -----------------------------------------------------------------------------
+common_ipa_enroll: true
+
+ipaclient_mkhomedir: true
+ipaclient_no_nisdomain: true
+ipaclient_force_join: false
+
+# -----------------------------------------------------------------------------
+# Secrets applicatifs (références vers vault.yml)
+# Ajoutés au fur et à mesure des déploiements de service
+# -----------------------------------------------------------------------------
+ldap_bind_password_nextcloud: "{{ vault_ldap_bind_password_nextcloud }}"
+ldap_bind_password_mail: "{{ vault_ldap_bind_password_mail }}"
+ldap_bind_password_odoo: "{{ vault_ldap_bind_password_odoo }}"
+ldap_bind_password_rocketchat: "{{ vault_ldap_bind_password_rocketchat }}"

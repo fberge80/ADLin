@@ -1,0 +1,47 @@
+---
+# roles/freeipa_server/tasks/firewalld.yml
+#
+# FreeIPA expose de nombreux services réseau. Firewalld fournit un service
+# prédéfini "freeipa-ldap" qui couvre LDAP, LDAPS, HTTP, HTTPS et Kerberos.
+# On l'complète avec DNS (53) et NTP (123) car ipa01 remplit ces rôles.
+#
+# Ports ouverts :
+#   80/tcp   — HTTP (redirection HTTPS, ACME)
+#   443/tcp  — HTTPS (interface web IPA, API JSON)
+#   389/tcp  — LDAP (non chiffré — interne uniquement, requis par certains clients)
+#   636/tcp  — LDAPS (LDAP over TLS — utilisé par toutes les applications)
+#   88/tcp   — Kerberos (authentification)
+#   88/udp   — Kerberos
+#   464/tcp  — kpasswd (changement de mot de passe Kerberos)
+#   464/udp  — kpasswd
+#   53/tcp   — DNS
+#   53/udp   — DNS
+#   123/udp  — NTP (ipa01 sert le temps au réseau isolé)
+
+- name: "firewalld | Activer le service freeipa-ldap (LDAP, LDAPS, HTTP, HTTPS, Kerberos)"
+  ansible.posix.firewalld:
+    service: freeipa-ldap
+    state: enabled
+    permanent: true
+    immediate: true
+
+- name: "firewalld | Activer le service freeipa-ldaps (alias LDAPS dédié)"
+  ansible.posix.firewalld:
+    service: freeipa-ldaps
+    state: enabled
+    permanent: true
+    immediate: true
+
+- name: "firewalld | Activer DNS (tcp + udp)"
+  ansible.posix.firewalld:
+    service: dns
+    state: enabled
+    permanent: true
+    immediate: true
+
+- name: "firewalld | Activer NTP (ipa01 = serveur NTP du réseau isolé)"
+  ansible.posix.firewalld:
+    service: ntp
+    state: enabled
+    permanent: true
+    immediate: true

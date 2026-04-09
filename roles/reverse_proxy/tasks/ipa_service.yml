@@ -1,0 +1,25 @@
+---
+# roles/reverse_proxy/tasks/ipa_service.yml
+#
+# Crée le principal de service HTTP/proxy01.adlin.lab dans FreeIPA.
+#
+# Concept — principal de service Kerberos :
+#   Un "service principal" est une identité Kerberos pour un service réseau.
+#   La forme est SERVICE/hostname@REALM (ex: HTTP/proxy01.adlin.lab@ADLIN.LAB).
+#   Il est nécessaire pour que certmonger puisse demander un certificat TLS
+#   à la CA FreeIPA : le certificat est lié au principal, ce qui permet
+#   à certmonger de le renouveler automatiquement avec les mêmes droits.
+#
+# Prérequis :
+#   - proxy01 doit être enrollé comme client FreeIPA (keytab /etc/krb5.keytab)
+#   - vault_ipa_admin_password doit être défini dans vault.yml
+
+- name: "ipa_service | Créer le principal HTTP pour proxy01"
+  freeipa.ansible_freeipa.ipaservice:
+    ipaadmin_password: "{{ ipa_admin_password }}"
+    name: "HTTP/{{ reverse_proxy_hostname }}"
+    state: present
+  # Ce module est idempotent — si le service existe déjà, pas de changement
+  delegate_to: ipa01.adlin.lab
+  # La création du principal se fait via l'API FreeIPA sur ipa01,
+  # pas depuis proxy01 lui-même

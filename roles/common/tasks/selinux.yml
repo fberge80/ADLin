@@ -1,0 +1,42 @@
+---
+# roles/common/tasks/selinux.yml
+#
+# SELinux en mode enforcing — non négociable dans ce projet.
+# La politique "targeted" protège les services sans contraindre les processus
+# non confinés (ce qui couvre tous les démons système courants sur RHEL 9).
+#
+# Note : le module ansible.posix.selinux modifie /etc/selinux/config et
+# applique le changement immédiatement si possible. Un reboot n'est nécessaire
+# que si SELinux était précédemment désactivé (disabled → enforcing).
+
+- name: "selinux | Appliquer le mode enforcing (politique targeted)"
+  ansible.posix.selinux:
+    state: "{{ common_selinux_state }}"
+    policy: "{{ common_selinux_policy }}"
+  register: selinux_result
+  notify: Reboot si SELinux a changé de mode
+
+- name: "selinux | Vérifier le mode SELinux courant"
+  ansible.builtin.command: getenforce
+  register: selinux_current
+  changed_when: false  # lecture seule, jamais de changement
+
+- name: "selinux | Afficher le mode actif"
+  ansible.builtin.debug:
+    msg: "SELinux mode actuel : {{ selinux_current.stdout }}"
+
+# -----------------------------------------------------------------------------
+# Services inutiles
+# Désactivés et masqués pour réduire la surface d'attaque.
+# "masked" empêche tout démarrage accidentel (y compris via systemd socket).
+# -----------------------------------------------------------------------------
+
+- name: "selinux | Désactiver et masquer les services inutiles"
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+    masked: true
+  loop: "{{ common_services_disabled }}"
+  # ignore_errors car ces services peuvent ne pas être installés sur toutes les VM
+  failed_when: false

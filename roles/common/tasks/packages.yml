@@ -1,0 +1,68 @@
+---
+# roles/common/tasks/packages.yml
+#
+# Ordre intentionnel :
+#   1. EPEL   — certains paquets de base peuvent venir d'EPEL
+#   2. Update — partir d'un système à jour avant d'installer quoi que ce soit
+#   3. Paquets de base
+
+# -----------------------------------------------------------------------------
+# Dépôt EPEL
+# epel-release est disponible dans les dépôts BaseOS de Rocky Linux 9 —
+# pas besoin de rpm --import ni d'URL manuelle.
+# -----------------------------------------------------------------------------
+
+- name: "packages | Activer le dépôt EPEL"
+  ansible.builtin.dnf:
+    name: epel-release
+    state: present
+
+# CRB (CodeReady Builder) est requis par certains paquets EPEL.
+# La vérification préalable via repolist garantit l'idempotence :
+# dnf config-manager --set-enabled ne produit aucun output quand CRB
+# est déjà actif, rendant tout changed_when sur stdout inefficace.
+- name: "packages | Vérifier les dépôts actifs"
+  ansible.builtin.command: dnf repolist enabled
+  register: repolist_enabled
+  changed_when: false
+
+- name: "packages | Activer le dépôt CRB (requis par certains paquets EPEL)"
+  ansible.builtin.command: dnf config-manager --set-enabled crb
+  when: "'crb' not in repolist_enabled.stdout"
+
+# -----------------------------------------------------------------------------
+# Mises à jour système
+# Commenté par défaut : les mises à jour complètes allongent les runs Ansible
+# et peuvent casser la reproductibilité des tests.
+# À activer explicitement via : ansible-playbook ... --tags update
+# -----------------------------------------------------------------------------
+
+# - name: "packages | Appliquer les mises à jour système"
+#   ansible.builtin.dnf:
+#     name: "*"
+#     state: latest
+#     update_cache: true
+#   tags: [never, update]
+
+- name: "packages | Mettre à jour le cache DNF"
+  ansible.builtin.dnf:
+    update_cache: true
+
+# -----------------------------------------------------------------------------
+# Paquets de base
+# -----------------------------------------------------------------------------
+
+- name: "packages | Installer les paquets de base"
+  ansible.builtin.dnf:
+    name: "{{ common_packages }}"
+    state: present
+
+# -----------------------------------------------------------------------------
+# Firewalld — démarrer et activer maintenant, configurer dans les rôles métier
+# -----------------------------------------------------------------------------
+
+- name: "packages | Démarrer et activer firewalld"
+  ansible.builtin.systemd:
+    name: firewalld
+    state: started
+    enabled: true

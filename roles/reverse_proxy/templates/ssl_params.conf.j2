@@ -1,0 +1,19 @@
+# /etc/nginx/conf.d/00-ssl_params.conf
+# Paramètres TLS partagés — inclus par chaque vhost
+# Géré par Ansible — ne pas modifier manuellement
+
+ssl_certificate     {{ reverse_proxy_cert_path }};
+ssl_certificate_key {{ reverse_proxy_key_path }};
+
+ssl_protocols             {{ nginx_ssl_protocols }};
+ssl_ciphers               {{ nginx_ssl_ciphers }};
+ssl_prefer_server_ciphers on;
+ssl_session_cache         shared:SSL:10m;
+ssl_session_timeout       10m;
+
+# OCSP Stapling — améliore les performances TLS en évitant que le client
+# consulte lui-même l'OCSP responder de FreeIPA
+ssl_stapling        on;
+ssl_stapling_verify on;
+resolver            {{ ipa_server }} valid=300s;
+resolver_timeout    5s;

@@ -1,0 +1,64 @@
+---
+# roles/freeipa_server/defaults/main.yml
+
+# -----------------------------------------------------------------------------
+# Identité FreeIPA
+# -----------------------------------------------------------------------------
+
+ipaserver_domain: "{{ ipa_domain }}"
+ipaserver_realm: "{{ ipa_realm }}"
+
+# -----------------------------------------------------------------------------
+# DNS intégré
+# -----------------------------------------------------------------------------
+
+ipaserver_setup_dns: true
+ipaserver_no_forwarders: true
+ipaserver_auto_reverse: true
+ipaserver_allow_zone_overlap: false
+
+# -----------------------------------------------------------------------------
+# PKI / Dogtag
+# -----------------------------------------------------------------------------
+
+# KRA requis pour le Vault IPA — impossible à ajouter après installation initiale
+ipaserver_setup_kra: true
+
+# -----------------------------------------------------------------------------
+# NTP
+# -----------------------------------------------------------------------------
+
+# Le rôle common gère chrony — ipaserver ne doit pas le reconfigurer
+ipaserver_configure_ntp: false
+
+# -----------------------------------------------------------------------------
+# Comptes de service LDAP
+# -----------------------------------------------------------------------------
+
+freeipa_service_accounts:
+  - uid: svc_nextcloud
+    description: "Compte de service Nextcloud — lecture LDAP"
+    password: "{{ ldap_svc_nextcloud_password }}"
+  - uid: svc_mail
+    description: "Compte de service Postfix/Dovecot/SOGo — lookup LDAP"
+    password: "{{ ldap_svc_mail_password }}"
+  - uid: svc_odoo
+    description: "Compte de service Odoo — authentification LDAP"
+    password: "{{ ldap_svc_odoo_password }}"
+  - uid: svc_rocketchat
+    description: "Compte de service Rocket.Chat — sync LDAP/groupes"
+    password: "{{ ldap_svc_rocketchat_password }}"
+
+# -----------------------------------------------------------------------------
+# Groupes applicatifs FreeIPA
+# -----------------------------------------------------------------------------
+
+freeipa_app_groups:
+  - name: nextcloud_users
+    description: "Utilisateurs autorisés à accéder à Nextcloud"
+  - name: mail_users
+    description: "Utilisateurs disposant d'une boîte mail"
+  - name: odoo_users
+    description: "Utilisateurs autorisés à accéder à Odoo"
+  - name: chat_users
+    description: "Utilisateurs autorisés à accéder à Rocket.Chat"
