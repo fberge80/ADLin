@@ -1,0 +1,34 @@
+---
+# roles/reverse_proxy/tasks/install.yml
+#
+# Nginx est dans les dépôts AppStream de Rocky Linux 9.
+# certmonger est natif RHEL — fait partie de l'écosystème FreeIPA client.
+
+- name: "install | Installer nginx et certmonger"
+  ansible.builtin.dnf:
+    name:
+      - nginx
+      - certmonger    # daemon de gestion des certificats FreeIPA
+    state: present
+
+- name: "install | Démarrer et activer nginx"
+  ansible.builtin.systemd:
+    name: nginx
+    state: started
+    enabled: true
+
+- name: "install | Démarrer et activer certmonger"
+  ansible.builtin.systemd:
+    name: certmonger
+    state: started
+    enabled: true
+
+# Le répertoire /etc/pki/tls/private/ doit exister avec les bons droits
+# Il est créé par le paquet openssl-libs mais la vérification est idempotente
+- name: "install | Vérifier le répertoire des clés privées"
+  ansible.builtin.file:
+    path: /etc/pki/tls/private
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"

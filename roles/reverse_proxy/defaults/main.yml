@@ -1,0 +1,67 @@
+---
+# roles/reverse_proxy/defaults/main.yml
+
+# -----------------------------------------------------------------------------
+# Nginx
+# -----------------------------------------------------------------------------
+
+# Répertoire des vhosts — inclus par défaut par nginx sur Rocky Linux 9
+nginx_vhosts_dir: /etc/nginx/conf.d
+
+# Paramètres TLS partagés entre tous les vhosts
+nginx_ssl_protocols: "TLSv1.2 TLSv1.3"
+nginx_ssl_ciphers: "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384"
+
+# Taille du buffer pour les headers — nécessaire pour Kerberos/GSSAPI (gros tickets)
+nginx_proxy_buffer_size: "128k"
+nginx_proxy_buffers: "4 256k"
+
+# -----------------------------------------------------------------------------
+# Certmonger / PKI FreeIPA
+# -----------------------------------------------------------------------------
+
+# FQDN de cette VM — utilisé comme CN du certificat et principal Kerberos
+reverse_proxy_hostname: "proxy01.adlin.lab"
+
+# Chemins des fichiers PEM — certmonger écrit directement dans /etc/pki/tls/
+# Contexte SELinux cert_t déjà en place sur ce répertoire (RHEL natif)
+reverse_proxy_cert_path: "/etc/pki/tls/certs/proxy01.adlin.lab.crt"
+reverse_proxy_key_path: "/etc/pki/tls/private/proxy01.adlin.lab.key"
+
+# Délai d'attente maximum pour la délivrance du certificat par Dogtag CA (en secondes)
+# Dogtag peut prendre 30-60s selon la charge — 5 minutes de marge
+reverse_proxy_cert_wait_retries: 30
+reverse_proxy_cert_wait_delay: 10
+
+# -----------------------------------------------------------------------------
+# Vhosts — liste des services à proxifier
+# Surchargeable depuis group_vars/proxies.yml
+#
+# Champs :
+#   name          : identifiant court (nom du fichier conf.d/<name>.conf)
+#   fqdn          : nom de domaine complet exposé aux clients
+#   upstream_url  : URL interne de l'application (avec port si non standard)
+#   longpolling_url (optionnel) : upstream séparé pour websocket/longpolling
+#                                 utilisé par Odoo (port 8072)
+# -----------------------------------------------------------------------------
+reverse_proxy_vhosts:
+  - name: cloud
+    fqdn: cloud.adlin.lab
+    upstream_url: "http://10.10.10.13"
+
+  - name: mail
+    fqdn: mail.adlin.lab
+    upstream_url: "http://10.10.10.12"
+
+  - name: erp
+    fqdn: erp.adlin.lab
+    upstream_url: "http://10.10.10.14:8069"
+    longpolling_url: "http://10.10.10.14:8072"   # Workers Odoo longpolling
+
+  - name: chat
+    fqdn: chat.adlin.lab
+    upstream_url: "http://10.10.10.15:3000"
+
+  - name: pbx
+    fqdn: pbx.adlin.lab
+    upstream_url: "http://10.10.10.16"

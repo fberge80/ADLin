@@ -1,0 +1,12 @@
+---
+galaxy_info:
+  author: "Frédéric"
+  description: "Hardening OS de base pour les VM Rocky Linux 9 du projet ADLin"
+  license: "MIT"
+  min_ansible_version: "2.15"
+  platforms:
+    - name: EL
+      versions:
+        - "9"
+
+dependencies: []

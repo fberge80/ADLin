@@ -1,0 +1,28 @@
+---
+# roles/freeipa_server/tasks/ipaserver.yml
+#
+# Déploiement FreeIPA via la collection officielle freeipa.ansible_freeipa.
+#
+# Les variables ipaserver_* sont lues directement par la collection depuis
+# l'espace de variables Ansible (defaults/main.yml + group_vars).
+# Ne pas les repasser dans vars: — cela crée une récursion infinie.
+#
+# Durée estimée : 10 à 15 minutes (installation + configuration PKI Dogtag).
+
+- name: "ipaserver | Déployer FreeIPA Server"
+  ansible.builtin.include_role:
+    name: freeipa.ansible_freeipa.ipaserver
+  vars:
+    ipaadmin_password: "{{ vault_ipa_admin_password }}"
+    ipadm_password: "{{ vault_ipa_dm_password }}"
+
+# Vérification post-installation
+- name: "ipaserver | Vérifier que les services IPA sont actifs"
+  ansible.builtin.command: ipactl status
+  register: ipa_status
+  changed_when: false
+  failed_when: "'RUNNING' not in ipa_status.stdout"
+
+- name: "ipaserver | Afficher le statut IPA"
+  ansible.builtin.debug:
+    msg: "{{ ipa_status.stdout_lines }}"

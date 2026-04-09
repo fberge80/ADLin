@@ -1,0 +1,49 @@
+---
+# roles/common/tasks/freeipa_client.yml
+#
+# Enrollment des VM comme clients FreeIPA.
+# Ce fichier n'est exécuté que si common_ipa_enroll: true (cf. tasks/main.yml).
+#
+# Concept FreeIPA client :
+#   L'enrollment configure quatre choses simultanément sur la VM :
+#     1. SSSD  — daemon d'authentification qui interroge le LDAP de FreeIPA
+#     2. Kerberos (krb5.conf) — pointe vers le KDC (Key Distribution Center) d'IPA
+#     3. PAM   — délègue l'authentification système à SSSD
+#     4. NSS   — délègue la résolution d'identité (getpwnam, getgrnam) à SSSD
+#   Résultat : tous les comptes FreeIPA peuvent se connecter sur la VM via SSH,
+#   avec création automatique du home directory (ipaclient_mkhomedir: true).
+#
+# Prérequis avant d'activer common_ipa_enroll: true :
+#   - ipa01.adlin.lab déployé et opérationnel
+#   - DNS résolvant ipa01.adlin.lab depuis la VM cible
+#   - vault_ipa_admin_password défini dans group_vars/all/vault.yml
+#   - Port 443/tcp (HTTPS) et 88/tcp+udp (Kerberos) ouverts vers ipa01
+
+- name: "freeipa_client | Vérifier la résolution DNS de FreeIPA"
+  ansible.builtin.command: "dig +short {{ ipa_server }}"
+  register: ipa_dns_check
+  changed_when: false
+  failed_when: ipa_dns_check.stdout == ""
+
+- name: "freeipa_client | Enroller la VM comme client FreeIPA"
+  ansible.builtin.include_role:
+    name: freeipa.ansible_freeipa.ipaclient
+  vars:
+    ipaadmin_password: "{{ vault_ipa_admin_password }}"
+    ipadomain: "{{ ipa_domain }}"
+    iparealm: "{{ ipa_realm }}"
+    ipaserver_hostname: "{{ ipa_server }}"
+    ipaclient_mkhomedir: "{{ ipaclient_mkhomedir }}"
+    ipaclient_no_nisdomain: "{{ ipaclient_no_nisdomain }}"
+    ipaclient_force_join: "{{ ipaclient_force_join }}"
+    # NTP géré par notre tâche chrony — on demande à ipaclient de ne pas y toucher
+    ipaclient_configure_dns_resolver: false
+    ipaclient_configure_ntp: false
+
+# Vérification post-enrollment : obtenir un ticket Kerberos avec le compte host
+# Un échec ici indique un problème d'enrollment ou de connectivité KDC
+- name: "freeipa_client | Vérifier le ticket Kerberos host"
+  ansible.builtin.command: "klist -k /etc/krb5.keytab"
+  register: keytab_check
+  changed_when: false
+  failed_when: keytab_check.rc != 0

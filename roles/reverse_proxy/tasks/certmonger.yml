@@ -1,0 +1,55 @@
+---
+# roles/reverse_proxy/tasks/certmonger.yml
+#
+# Demande un certificat TLS multi-SAN via certmonger et la CA FreeIPA (Dogtag).
+#
+# Flux de délivrance :
+#   1. ipa-getcert request  → certmonger soumet la CSR à Dogtag via IPA API
+#   2. Dogtag signe le certificat (30-60s selon charge)
+#   3. certmonger écrit le cert+clé dans les fichiers PEM spécifiés
+#   4. certmonger passe en état MONITORING — il renouvellera automatiquement
+#      30 jours avant expiration
+#
+# Idempotence : on vérifie si le chemin du cert est déjà suivi par certmonger
+# avant de soumettre une nouvelle demande.
+
+- name: "certmonger | Vérifier les certificats déjà suivis"
+  ansible.builtin.command: getcert list
+  register: getcert_list
+  changed_when: false
+
+- name: "certmonger | Construire la liste des SANs (Subject Alternative Names)"
+  ansible.builtin.set_fact:
+    _san_args: >-
+      {{ reverse_proxy_vhosts
+         | map(attribute='fqdn')
+         | map('regex_replace', '^(.*)$', '-D \1')
+         | join(' ') }}
+  # Résultat : "-D cloud.adlin.lab -D mail.adlin.lab -D erp.adlin.lab ..."
+  # Chaque SAN permet à nginx d'utiliser ce cert pour le vhost correspondant
+
+- name: "certmonger | Demander le certificat TLS multi-SAN à FreeIPA CA"
+  ansible.builtin.shell: >
+    ipa-getcert request
+    -f {{ reverse_proxy_cert_path }}
+    -k {{ reverse_proxy_key_path }}
+    -K HTTP/{{ reverse_proxy_hostname }}@{{ ipa_realm }}
+    -N "CN={{ reverse_proxy_hostname }}"
+    {{ _san_args }}
+  when: reverse_proxy_cert_path not in getcert_list.stdout
+  # ipa-getcert utilise le keytab de la machine (/etc/krb5.keytab) pour
+  # s'authentifier auprès de FreeIPA — enrollment IPA client obligatoire
+
+- name: "certmonger | Attendre la délivrance du certificat par Dogtag"
+  ansible.builtin.command: getcert list -f {{ reverse_proxy_cert_path }}
+  register: cert_status
+  until: "'status: MONITORING' in cert_status.stdout"
+  retries: "{{ reverse_proxy_cert_wait_retries }}"
+  delay: "{{ reverse_proxy_cert_wait_delay }}"
+  changed_when: false
+  # MONITORING = cert délivré et suivi pour renouvellement automatique
+  # Si l'état reste CA_UNREACHABLE ou NEED_GUIDANCE, voir : getcert list -v
+
+- name: "certmonger | Afficher l'état du certificat"
+  ansible.builtin.debug:
+    msg: "{{ cert_status.stdout_lines }}"

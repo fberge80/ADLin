@@ -1,0 +1,12 @@
+# inventory/production/group_vars/ipaservers.yml
+#
+# Surcharges spécifiques au serveur FreeIPA.
+# ipa01 ne doit pas s'enroller comme client IPA (il EST le serveur).
+# FreeIPA installer gère chrony sur ipa01 — le rôle common ne doit pas y toucher.
+
+# Pas d'enrollment IPA client sur le serveur IPA lui-même
+common_ipa_enroll: false
+
+# FreeIPA server installer configure chrony avec iburst vers pool.ntp.org
+# et active le service NTP pour le réseau interne — ne pas écraser
+common_manage_ntp: false

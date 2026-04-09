@@ -1,0 +1,64 @@
+# /etc/nginx/conf.d/{{ vhost.name }}.conf
+# Vhost pour {{ vhost.fqdn }} → {{ vhost.upstream_url }}
+# Géré par Ansible — ne pas modifier manuellement
+
+# Bloc HTTPS principal
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name {{ vhost.fqdn }};
+
+    # Certificat TLS — paramètres dans 00-ssl_params.conf
+    include {{ nginx_vhosts_dir }}/00-ssl_params.conf;
+
+    # En-têtes de sécurité
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options    "nosniff" always;
+    add_header X-Frame-Options           "SAMEORIGIN" always;
+    add_header Referrer-Policy           "strict-origin-when-cross-origin" always;
+
+    # Taille max des corps de requête — nécessaire pour Nextcloud (uploads)
+    client_max_body_size 512M;
+
+    # Buffers — dimensionnés pour les headers Kerberos/GSSAPI volumineux
+    proxy_buffer_size   {{ nginx_proxy_buffer_size }};
+    proxy_buffers       {{ nginx_proxy_buffers }};
+
+    # Location principale
+    location / {
+        proxy_pass              {{ vhost.upstream_url }};
+        proxy_set_header        Host               $host;
+        proxy_set_header        X-Real-IP          $remote_addr;
+        proxy_set_header        X-Forwarded-For    $proxy_add_x_forwarded_for;
+        proxy_set_header        X-Forwarded-Proto  $scheme;
+        proxy_http_version      1.1;
+        proxy_set_header        Upgrade            $http_upgrade;
+        proxy_set_header        Connection         "upgrade";
+        proxy_read_timeout      3600s;
+        proxy_send_timeout      3600s;
+    }
+
+{% if vhost.longpolling_url is defined %}
+    # Longpolling Odoo (workers dédiés sur port 8072)
+    # Les requêtes /longpolling sont des connexions longue durée — timeout élevé
+    location /longpolling {
+        proxy_pass          {{ vhost.longpolling_url }};
+        proxy_set_header    Host               $host;
+        proxy_set_header    X-Real-IP          $remote_addr;
+        proxy_set_header    X-Forwarded-For    $proxy_add_x_forwarded_for;
+        proxy_set_header    X-Forwarded-Proto  $scheme;
+        proxy_http_version  1.1;
+        proxy_set_header    Upgrade            $http_upgrade;
+        proxy_set_header    Connection         "upgrade";
+        proxy_read_timeout  3600s;
+    }
+{% endif %}
+}
+
+# Redirection HTTP → HTTPS
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{ vhost.fqdn }};
+    return 301 https://$host$request_uri;
+}

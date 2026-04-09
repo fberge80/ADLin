@@ -1,0 +1,19 @@
+---
+# playbooks/00-common.yml
+#
+# Applique le rôle common à toutes les VM Rocky Linux 9.
+# Exclut explicitement pbx01 (Debian 12) via le groupe rocky_hosts.
+#
+# Utilisation :
+#   ansible-playbook playbooks/00-common.yml
+#   ansible-playbook playbooks/00-common.yml --tags selinux
+#   ansible-playbook playbooks/00-common.yml --tags update   # mises à jour système
+#
+# Tags disponibles : common, selinux, packages, chrony, ntp, freeipa, ipa, update
+
+- name: "Hardening OS de base — VM Rocky Linux 9"
+  hosts: rocky_hosts   # groupe défini dans inventory/production/hosts.yml
+  become: true
+
+  roles:
+    - role: common

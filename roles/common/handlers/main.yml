@@ -1,0 +1,13 @@
+---
+# roles/common/handlers/main.yml
+
+- name: Redémarrer chrony
+  ansible.builtin.systemd:
+    name: chronyd
+    state: restarted
+
+- name: Reboot si SELinux a changé de mode
+  ansible.builtin.reboot:
+    msg: "Reboot requis suite au changement de mode SELinux"
+    reboot_timeout: 300
+  when: selinux_result.reboot_required | default(false)

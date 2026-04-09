@@ -1,0 +1,20 @@
+---
+# roles/reverse_proxy/tasks/selinux.yml
+#
+# Nginx en reverse proxy doit pouvoir initier des connexions réseau vers
+# les upstreams (Nextcloud, Odoo, etc.) — httpd_can_network_connect couvre
+# tous les processus confinés de type httpd_t, dont nginx.
+
+- name: "selinux | Activer les booleans requis par nginx reverse proxy"
+  ansible.posix.seboolean:
+    name: "{{ item }}"
+    state: true
+    persistent: true
+  loop:
+    - httpd_can_network_connect      # connexions sortantes vers les upstreams
+    - httpd_can_network_connect_db   # accès DB si nginx interroge directement (précaution)
+    - httpd_read_user_content        # lecture certificats dans /etc/pki/tls/
+
+# Les fichiers /etc/pki/tls/certs/ et /etc/pki/tls/private/ ont déjà les
+# contextes cert_t et etc_t appropriés — nginx peut les lire sans modification.
+# Aucun semanage fcontext nécessaire pour les chemins standards /etc/pki/tls/.

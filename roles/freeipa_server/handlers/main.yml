@@ -1,0 +1,4 @@
+---
+# roles/freeipa_server/handlers/main.yml
+# Aucun handler requis pour ce rôle : la collection ipaserver gère
+# elle-même le démarrage des services via ipactl.

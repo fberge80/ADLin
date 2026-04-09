@@ -1,0 +1,25 @@
+---
+# roles/freeipa_server/tasks/hostname.yml
+#
+# FreeIPA exige un FQDN correct dès l'installation — le serveur s'enregistre
+# lui-même dans DNS avec ce nom. Un hostname incorrect produit une installation
+# fonctionnelle mais avec des certificats TLS sur le mauvais CN, ce qui
+# casse les clients SSL/LDAPS/HTTPS ultérieurement.
+#
+# Le hostname attendu est dérivé de l'inventaire : inventory_hostname.
+# Exemple : ipa01.adlin.lab
+
+- name: "hostname | Définir le FQDN de la VM"
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+    use: systemd
+
+- name: "hostname | Vérifier la résolution locale du FQDN"
+  ansible.builtin.command: "hostname -f"
+  register: hostname_check
+  changed_when: false
+  failed_when: hostname_check.stdout != inventory_hostname
+
+- name: "hostname | Afficher le hostname actif"
+  ansible.builtin.debug:
+    msg: "Hostname : {{ hostname_check.stdout }}"

@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  author: "Frédéric"
+  description: "Déploiement FreeIPA Server avec DNS, PKI, KRA et comptes de service LDAP"
+  license: "MIT"
+  min_ansible_version: "2.15"
+  platforms:
+    - name: EL
+      versions:
+        - "9"
+
+dependencies: []
+# La collection freeipa.ansible_freeipa est chargée via include_role.
+# Le rôle common doit être appliqué avant ce rôle (SELinux, chrony, firewalld).

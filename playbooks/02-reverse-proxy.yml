@@ -1,0 +1,20 @@
+---
+# playbooks/02-reverse-proxy.yml
+#
+# Déploie le reverse proxy Nginx + TLS FreeIPA sur proxy01.
+#
+# Prérequis obligatoires avant d'exécuter ce playbook :
+#   1. FreeIPA opérationnel (01-freeipa-server.yml exécuté)
+#   2. proxy01 enrollé comme client IPA (00-common.yml exécuté sur proxy01)
+#
+# Utilisation :
+#   ansible-playbook playbooks/02-reverse-proxy.yml
+#   ansible-playbook playbooks/02-reverse-proxy.yml --tags certmonger
+#   ansible-playbook playbooks/02-reverse-proxy.yml --tags vhosts
+
+- name: "Reverse proxy Nginx + TLS FreeIPA — proxy01"
+  hosts: proxies
+  become: true
+
+  roles:
+    - role: reverse_proxy
