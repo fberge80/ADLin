@@ -1,4 +1,4 @@
-# ADLin — Infrastructure PME open-source sur Proxmox VE (Work in Progess)
+# ADLin — Infrastructure PME open-source sur Proxmox VE (Version Alpha) (Assisted by Claude:claude-4.6-sonnet)
 
 > Remplacement complet d'une stack Microsoft 365 / Google Workspace / Salesforce
 > par des équivalents open-source auto-hébergés, déployés intégralement via Ansible
