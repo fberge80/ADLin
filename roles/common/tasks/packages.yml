@@ -23,12 +23,13 @@
 # est déjà actif, rendant tout changed_when sur stdout inefficace.
 - name: "packages | Vérifier les dépôts actifs"
   ansible.builtin.command: dnf repolist enabled
-  register: repolist_enabled
+  register: common_repolist_enabled
   changed_when: false
 
 - name: "packages | Activer le dépôt CRB (requis par certains paquets EPEL)"
   ansible.builtin.command: dnf config-manager --set-enabled crb
-  when: "'crb' not in repolist_enabled.stdout"
+  when: "'crb' not in common_repolist_enabled.stdout"
+  changed_when: true
 
 # -----------------------------------------------------------------------------
 # Mises à jour système

@@ -15,12 +15,12 @@
 
 - name: "certmonger | Vérifier les certificats déjà suivis"
   ansible.builtin.command: getcert list
-  register: getcert_list
+  register: reverse_proxy_getcert_list
   changed_when: false
 
 - name: "certmonger | Construire la liste des SANs (Subject Alternative Names)"
   ansible.builtin.set_fact:
-    _san_args: >-
+    reverse_proxy_san_args: >-
       {{ reverse_proxy_vhosts
          | map(attribute='fqdn')
          | map('regex_replace', '^(.*)$', '-D \1')
@@ -35,15 +35,16 @@
     -k {{ reverse_proxy_key_path }}
     -K HTTP/{{ reverse_proxy_hostname }}@{{ ipa_realm }}
     -N "CN={{ reverse_proxy_hostname }}"
-    {{ _san_args }}
-  when: reverse_proxy_cert_path not in getcert_list.stdout
+    {{ reverse_proxy_san_args }}
+  when: reverse_proxy_cert_path not in reverse_proxy_getcert_list.stdout
+  changed_when: true
   # ipa-getcert utilise le keytab de la machine (/etc/krb5.keytab) pour
   # s'authentifier auprès de FreeIPA — enrollment IPA client obligatoire
 
 - name: "certmonger | Attendre la délivrance du certificat par Dogtag"
   ansible.builtin.command: getcert list -f {{ reverse_proxy_cert_path }}
-  register: cert_status
-  until: "'status: MONITORING' in cert_status.stdout"
+  register: reverse_proxy_cert_status
+  until: "'status: MONITORING' in reverse_proxy_cert_status.stdout"
   retries: "{{ reverse_proxy_cert_wait_retries }}"
   delay: "{{ reverse_proxy_cert_wait_delay }}"
   changed_when: false
@@ -52,4 +53,4 @@
 
 - name: "certmonger | Afficher l'état du certificat"
   ansible.builtin.debug:
-    msg: "{{ cert_status.stdout_lines }}"
+    msg: "{{ reverse_proxy_cert_status.stdout_lines }}"

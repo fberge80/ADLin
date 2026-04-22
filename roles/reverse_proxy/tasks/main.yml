@@ -1,24 +1,24 @@
 ---
-- name: "reverse_proxy | Installation Nginx"
+- name: "Reverse_proxy | Installation Nginx"
   ansible.builtin.import_tasks: install.yml
   tags: [reverse_proxy, nginx, install]
 
-- name: "reverse_proxy | Création du principal FreeIPA HTTP"
+- name: "Reverse_proxy | Création du principal FreeIPA HTTP"
   ansible.builtin.import_tasks: ipa_service.yml
   tags: [reverse_proxy, freeipa, ipa, pki]
 
-- name: "reverse_proxy | Demande et suivi certificat TLS (certmonger)"
+- name: "Reverse_proxy | Demande et suivi certificat TLS (certmonger)"
   ansible.builtin.import_tasks: certmonger.yml
   tags: [reverse_proxy, certmonger, tls, pki]
 
-- name: "reverse_proxy | Configuration SELinux"
+- name: "Reverse_proxy | Configuration SELinux"
   ansible.builtin.import_tasks: selinux.yml
   tags: [reverse_proxy, selinux]
 
-- name: "reverse_proxy | Règles firewalld"
+- name: "Reverse_proxy | Règles firewalld"
   ansible.builtin.import_tasks: firewalld.yml
   tags: [reverse_proxy, firewalld]
 
-- name: "reverse_proxy | Déploiement des vhosts Nginx"
+- name: "Reverse_proxy | Déploiement des vhosts Nginx"
   ansible.builtin.import_tasks: vhosts.yml
   tags: [reverse_proxy, nginx, vhosts]

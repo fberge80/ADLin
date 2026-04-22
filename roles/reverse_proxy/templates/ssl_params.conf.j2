@@ -5,8 +5,8 @@
 ssl_certificate     {{ reverse_proxy_cert_path }};
 ssl_certificate_key {{ reverse_proxy_key_path }};
 
-ssl_protocols             {{ nginx_ssl_protocols }};
-ssl_ciphers               {{ nginx_ssl_ciphers }};
+ssl_protocols             {{ reverse_proxy_ssl_protocols }};
+ssl_ciphers               {{ reverse_proxy_ssl_ciphers }};
 ssl_prefer_server_ciphers on;
 ssl_session_cache         shared:SSL:10m;
 ssl_session_timeout       10m;

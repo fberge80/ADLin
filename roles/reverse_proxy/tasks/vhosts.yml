@@ -4,7 +4,7 @@
 - name: "vhosts | Déployer les paramètres TLS partagés"
   ansible.builtin.template:
     src: ssl_params.conf.j2
-    dest: "{{ nginx_vhosts_dir }}/00-ssl_params.conf"
+    dest: "{{ reverse_proxy_vhosts_dir }}/00-ssl_params.conf"
     owner: root
     group: root
     mode: "0644"
@@ -14,7 +14,7 @@
 - name: "vhosts | Déployer la configuration de chaque vhost"
   ansible.builtin.template:
     src: vhost.conf.j2
-    dest: "{{ nginx_vhosts_dir }}/{{ vhost.name }}.conf"
+    dest: "{{ reverse_proxy_vhosts_dir }}/{{ vhost.name }}.conf"
     owner: root
     group: root
     mode: "0644"

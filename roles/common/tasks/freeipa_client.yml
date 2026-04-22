@@ -21,9 +21,9 @@
 
 - name: "freeipa_client | Vérifier la résolution DNS de FreeIPA"
   ansible.builtin.command: "dig +short {{ ipa_server }}"
-  register: ipa_dns_check
+  register: common_ipa_dns_check
   changed_when: false
-  failed_when: ipa_dns_check.stdout == ""
+  failed_when: common_ipa_dns_check.stdout == ""
 
 - name: "freeipa_client | Enroller la VM comme client FreeIPA"
   ansible.builtin.include_role:
@@ -44,6 +44,6 @@
 # Un échec ici indique un problème d'enrollment ou de connectivité KDC
 - name: "freeipa_client | Vérifier le ticket Kerberos host"
   ansible.builtin.command: "klist -k /etc/krb5.keytab"
-  register: keytab_check
+  register: common_keytab_check
   changed_when: false
-  failed_when: keytab_check.rc != 0
+  failed_when: common_keytab_check.rc != 0

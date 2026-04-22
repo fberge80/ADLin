@@ -61,11 +61,3 @@ common_manage_ntp: true
 # -----------------------------------------------------------------------------
 
 common_ipa_enroll: false
-
-ipa_domain: "adlin.lab"
-ipa_realm: "ADLIN.LAB"
-ipa_server: "ipa01.adlin.lab"
-
-ipaclient_mkhomedir: true
-ipaclient_no_nisdomain: true
-ipaclient_force_join: false

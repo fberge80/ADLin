@@ -1,41 +1,16 @@
 ---
 # roles/freeipa_server/defaults/main.yml
-
-# -----------------------------------------------------------------------------
-# Identité FreeIPA
-# -----------------------------------------------------------------------------
-
-ipaserver_domain: "{{ ipa_domain }}"
-ipaserver_realm: "{{ ipa_realm }}"
-
-# -----------------------------------------------------------------------------
-# DNS intégré
-# -----------------------------------------------------------------------------
-
-ipaserver_setup_dns: true
-ipaserver_no_forwarders: true
-ipaserver_auto_reverse: true
-ipaserver_allow_zone_overlap: false
-
-# -----------------------------------------------------------------------------
-# PKI / Dogtag
-# -----------------------------------------------------------------------------
-
-# KRA requis pour le Vault IPA — impossible à ajouter après installation initiale
-ipaserver_setup_kra: true
-
-# -----------------------------------------------------------------------------
-# NTP
-# -----------------------------------------------------------------------------
-
-# Le rôle common gère chrony — ipaserver ne doit pas le reconfigurer
-ipaserver_configure_ntp: false
+#
+# Seules les variables propres au rôle sont définies ici (préfixe freeipa_server_).
+# Les variables ipaserver_* consommées par la collection freeipa.ansible_freeipa
+# sont définies dans inventory/production/group_vars/ipaservers.yml — elles
+# appartiennent à la couche inventaire, pas aux defaults d'un rôle.
 
 # -----------------------------------------------------------------------------
 # Comptes de service LDAP
 # -----------------------------------------------------------------------------
 
-freeipa_service_accounts:
+freeipa_server_service_accounts:
   - uid: svc_nextcloud
     description: "Compte de service Nextcloud — lecture LDAP"
     password: "{{ ldap_svc_nextcloud_password }}"
@@ -53,7 +28,7 @@ freeipa_service_accounts:
 # Groupes applicatifs FreeIPA
 # -----------------------------------------------------------------------------
 
-freeipa_app_groups:
+freeipa_server_app_groups:
   - name: nextcloud_users
     description: "Utilisateurs autorisés à accéder à Nextcloud"
   - name: mail_users

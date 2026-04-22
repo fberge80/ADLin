@@ -29,11 +29,11 @@
 # Vérification non bloquante — utile pour le débogage en CI/pipeline
 - name: "chrony | Vérifier la synchronisation NTP"
   ansible.builtin.command: chronyc tracking
-  register: chrony_tracking
+  register: common_chrony_tracking
   changed_when: false
   failed_when: false  # Ne pas bloquer si NTP n'est pas encore stable
 
 - name: "chrony | Afficher l'état de synchronisation"
   ansible.builtin.debug:
-    msg: "{{ chrony_tracking.stdout_lines }}"
-  when: chrony_tracking.rc == 0
+    msg: "{{ common_chrony_tracking.stdout_lines }}"
+  when: common_chrony_tracking.rc == 0

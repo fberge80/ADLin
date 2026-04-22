@@ -13,17 +13,17 @@
   ansible.posix.selinux:
     state: "{{ common_selinux_state }}"
     policy: "{{ common_selinux_policy }}"
-  register: selinux_result
+  register: common_selinux_result
   notify: Reboot si SELinux a changé de mode
 
 - name: "selinux | Vérifier le mode SELinux courant"
   ansible.builtin.command: getenforce
-  register: selinux_current
+  register: common_selinux_current
   changed_when: false  # lecture seule, jamais de changement
 
 - name: "selinux | Afficher le mode actif"
   ansible.builtin.debug:
-    msg: "SELinux mode actuel : {{ selinux_current.stdout }}"
+    msg: "SELinux mode actuel : {{ common_selinux_current.stdout }}"
 
 # -----------------------------------------------------------------------------
 # Services inutiles

@@ -19,10 +19,10 @@
 # Vérification post-installation
 - name: "ipaserver | Vérifier que les services IPA sont actifs"
   ansible.builtin.command: ipactl status
-  register: ipa_status
+  register: freeipa_server_ipa_status
   changed_when: false
-  failed_when: "'RUNNING' not in ipa_status.stdout"
+  failed_when: "'RUNNING' not in freeipa_server_ipa_status.stdout"
 
 - name: "ipaserver | Afficher le statut IPA"
   ansible.builtin.debug:
-    msg: "{{ ipa_status.stdout_lines }}"
+    msg: "{{ freeipa_server_ipa_status.stdout_lines }}"

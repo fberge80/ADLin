@@ -10,4 +10,4 @@
   ansible.builtin.reboot:
     msg: "Reboot requis suite au changement de mode SELinux"
     reboot_timeout: 300
-  when: selinux_result.reboot_required | default(false)
+  when: common_selinux_result.reboot_required | default(false)

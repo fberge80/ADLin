@@ -10,3 +10,26 @@ common_ipa_enroll: false
 # FreeIPA server installer configure chrony avec iburst vers pool.ntp.org
 # et active le service NTP pour le réseau interne — ne pas écraser
 common_manage_ntp: false
+
+# -----------------------------------------------------------------------------
+# FreeIPA Server — configuration de l'installation
+# Variables consommées directement par la collection freeipa.ansible_freeipa.ipaserver.
+# Définies ici (group_vars) et non dans les defaults du rôle pour respecter
+# la règle ansible-lint var-naming[no-role-prefix].
+# -----------------------------------------------------------------------------
+
+# Identité
+ipaserver_domain: "{{ ipa_domain }}"
+ipaserver_realm: "{{ ipa_realm }}"
+
+# DNS intégré
+ipaserver_setup_dns: true
+ipaserver_no_forwarders: true
+ipaserver_auto_reverse: true
+ipaserver_allow_zone_overlap: false
+
+# PKI / Dogtag — KRA requis pour le Vault IPA (impossible à ajouter après install)
+ipaserver_setup_kra: true
+
+# NTP — le rôle common gère chrony, ipaserver ne doit pas le reconfigurer
+ipaserver_configure_ntp: false

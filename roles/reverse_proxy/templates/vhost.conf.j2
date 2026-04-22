@@ -9,7 +9,7 @@ server {
     server_name {{ vhost.fqdn }};
 
     # Certificat TLS — paramètres dans 00-ssl_params.conf
-    include {{ nginx_vhosts_dir }}/00-ssl_params.conf;
+    include {{ reverse_proxy_vhosts_dir }}/00-ssl_params.conf;
 
     # En-têtes de sécurité
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
@@ -21,8 +21,8 @@ server {
     client_max_body_size 512M;
 
     # Buffers — dimensionnés pour les headers Kerberos/GSSAPI volumineux
-    proxy_buffer_size   {{ nginx_proxy_buffer_size }};
-    proxy_buffers       {{ nginx_proxy_buffers }};
+    proxy_buffer_size   {{ reverse_proxy_buffer_size }};
+    proxy_buffers       {{ reverse_proxy_buffers }};
 
     # Location principale
     location / {

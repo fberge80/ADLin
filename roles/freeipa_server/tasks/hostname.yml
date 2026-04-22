@@ -16,10 +16,10 @@
 
 - name: "hostname | Vérifier la résolution locale du FQDN"
   ansible.builtin.command: "hostname -f"
-  register: hostname_check
+  register: freeipa_server_hostname_check
   changed_when: false
-  failed_when: hostname_check.stdout != inventory_hostname
+  failed_when: freeipa_server_hostname_check.stdout != inventory_hostname
 
 - name: "hostname | Afficher le hostname actif"
   ansible.builtin.debug:
-    msg: "Hostname : {{ hostname_check.stdout }}"
+    msg: "Hostname : {{ freeipa_server_hostname_check.stdout }}"

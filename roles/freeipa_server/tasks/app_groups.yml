@@ -18,6 +18,6 @@
     # objectclass=posixGroup utilisés par Nextcloud, Dovecot et Rocket.Chat
     posix: true
     state: present
-  loop: "{{ freeipa_app_groups }}"
+  loop: "{{ freeipa_server_app_groups }}"
   loop_control:
     label: "{{ item.name }}"
