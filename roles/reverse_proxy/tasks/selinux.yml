@@ -13,8 +13,9 @@
   loop:
     - httpd_can_network_connect      # connexions sortantes vers les upstreams
     - httpd_can_network_connect_db   # accès DB si nginx interroge directement (précaution)
-    - httpd_read_user_content        # lecture certificats dans /etc/pki/tls/
 
 # Les fichiers /etc/pki/tls/certs/ et /etc/pki/tls/private/ ont déjà les
 # contextes cert_t et etc_t appropriés — nginx peut les lire sans modification.
 # Aucun semanage fcontext nécessaire pour les chemins standards /etc/pki/tls/.
+# httpd_read_user_content N'est PAS nécessaire ici : ce boolean concerne les
+# home directories (/home/*), pas /etc/pki/tls/.

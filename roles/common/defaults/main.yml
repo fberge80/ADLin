@@ -47,7 +47,7 @@ common_ntp_iburst: true
 # Activé sur ipa01 via group_vars/ipaservers.yml.
 common_ntp_serve: false
 common_ntp_serve_network: "10.10.10.0/24"
-common_ntp_local_stratum: 5
+common_ntp_local_stratum: 10
 
 # Ajout en fin de fichier — après la section NTP existante
 
