@@ -8,7 +8,7 @@
 ![Rocky Linux](https://img.shields.io/badge/Rocky_Linux_9-10B981?style=flat-square&logo=rockylinux&logoColor=white)
 ![FreeIPA](https://img.shields.io/badge/FreeIPA-IdM-blue?style=flat-square)
 ![SELinux](https://img.shields.io/badge/SELinux-enforcing-orange?style=flat-square)
-![License](https://img.shields.io/badge/License-GPL--3.0-informational?style=flat-square)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
 ---
 
@@ -325,4 +325,4 @@ soit moins bien maintenues.
 
 ## Licence
 
-GPL-3.0 — voir [LICENSE](LICENSE).
+MIT, voir [LICENSE](LICENSE).
