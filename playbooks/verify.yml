@@ -1,0 +1,82 @@
+---
+# playbooks/verify.yml
+#
+# Smoke tests post déploiement.
+# Vérifie l état des fondations communes à toutes les VM Rocky Linux,
+# puis ajoute des tests spécifiques par service au fur et à mesure des phases.
+
+- name: "Vérification, fondations OS et FreeIPA client"
+  hosts: rocky_hosts
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: "verify | SELinux en mode enforcing"
+      ansible.builtin.command: getenforce
+      register: selinux_mode
+      changed_when: false
+      failed_when: selinux_mode.stdout != "Enforcing"
+
+    - name: "verify | chronyd actif et synchronisé"
+      ansible.builtin.command: chronyc tracking
+      register: chrony_status
+      changed_when: false
+      failed_when: "'Leap status     : Normal' not in chrony_status.stdout"
+
+    - name: "verify | firewalld actif"
+      ansible.builtin.systemd:
+        name: firewalld
+        state: started
+      check_mode: true
+      register: firewalld_check
+      failed_when: firewalld_check.changed
+
+    - name: "verify | Keytab Kerberos présent (clients IPA uniquement)"
+      ansible.builtin.command: klist -k /etc/krb5.keytab
+      register: keytab_check
+      changed_when: false
+      failed_when: keytab_check.rc != 0
+      when: common_ipa_enroll | default(false) | bool
+
+- name: "Vérification, FreeIPA Server"
+  hosts: ipaservers
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: "verify | Services IPA actifs (ipactl status)"
+      ansible.builtin.command: ipactl status
+      register: ipa_status
+      changed_when: false
+      failed_when: "'RUNNING' not in ipa_status.stdout"
+
+- name: "Vérification, reverse proxy"
+  hosts: proxies
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: "verify | nginx actif"
+      ansible.builtin.systemd:
+        name: nginx
+        state: started
+      check_mode: true
+      register: nginx_check
+      failed_when: nginx_check.changed
+
+    - name: "verify | Configuration nginx valide"
+      ansible.builtin.command: nginx -t
+      changed_when: false
+
+    - name: "verify | Certificat TLS en état MONITORING"
+      ansible.builtin.command: getcert list -f /etc/pki/tls/certs/proxy01.adlin.lab.crt
+      register: cert_status
+      changed_when: false
+      failed_when: "'status: MONITORING' not in cert_status.stdout"
+
+# Sections à ajouter au fur et à mesure :
+#   hosts: nextcloud   -> occ status, login test
+#   hosts: mailservers -> swaks (SMTP), test IMAP
+#   hosts: chat        -> healthcheck Rocket.Chat
+#   hosts: odoo        -> page login HTTP 200
+#   hosts: pbx         -> asterisk -rx "core show version"

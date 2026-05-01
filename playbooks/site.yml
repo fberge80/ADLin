@@ -1,0 +1,40 @@
+---
+# playbooks/site.yml
+#
+# Playbook master, exécute toute l infrastructure ADLin dans l ordre des
+# dépendances décrites dans docs/DEPLOYMENT_PLAN.md.
+#
+# Usage :
+#   ansible-playbook playbooks/site.yml
+#   make deploy-all
+#
+# Pour un déploiement partiel ciblé, préférer les playbooks individuels
+# ou les cibles make dédiées (deploy-common, deploy-freeipa, etc.).
+
+# -----------------------------------------------------------------------------
+# Phase 1, fondations
+# -----------------------------------------------------------------------------
+
+- import_playbook: 00-common.yml
+- import_playbook: 01-freeipa-server.yml
+
+# -----------------------------------------------------------------------------
+# Phase 2, reverse proxy + TLS
+# -----------------------------------------------------------------------------
+
+- import_playbook: 02-reverse-proxy.yml
+
+# -----------------------------------------------------------------------------
+# Phase 3, services de productivité (à décommenter au fur et à mesure)
+# -----------------------------------------------------------------------------
+
+# - import_playbook: 03-nextcloud.yml
+# - import_playbook: 04-mailserver.yml
+# - import_playbook: 06-rocketchat.yml
+
+# -----------------------------------------------------------------------------
+# Phase 4, services métier (à décommenter au fur et à mesure)
+# -----------------------------------------------------------------------------
+
+# - import_playbook: 05-odoo.yml
+# - import_playbook: 07-freepbx.yml
