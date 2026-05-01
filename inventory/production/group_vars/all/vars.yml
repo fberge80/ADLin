@@ -45,3 +45,11 @@ ldap_bind_password_nextcloud: "{{ vault_ldap_bind_password_nextcloud }}"
 ldap_bind_password_mail: "{{ vault_ldap_bind_password_mail }}"
 ldap_bind_password_odoo: "{{ vault_ldap_bind_password_odoo }}"
 ldap_bind_password_rocketchat: "{{ vault_ldap_bind_password_rocketchat }}"
+# -----------------------------------------------------------------------------
+# Comptes de service LDAP (cn=sysaccounts)
+# Indirection vault, les mots de passe réels sont dans vault.yml
+# -----------------------------------------------------------------------------
+ldap_svc_nextcloud_password:    "{{ vault_ldap_svc_nextcloud_password }}"
+ldap_svc_mail_password:         "{{ vault_ldap_svc_mail_password }}"
+ldap_svc_odoo_password:         "{{ vault_ldap_svc_odoo_password }}"
+ldap_svc_rocketchat_password:   "{{ vault_ldap_svc_rocketchat_password }}"
