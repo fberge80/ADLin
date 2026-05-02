@@ -1,3 +1,32 @@
+# ADLin — Infrastructure PME open-source sur Proxmox VE
+
+> Remplacement complet d'une stack Microsoft 365 / Google Workspace / Salesforce
+> par des équivalents open-source auto-hébergés, déployés intégralement via Ansible
+> sur Rocky Linux 9 avec FreeIPA comme socle d'identité centralisé.
+
+![Ansible](https://img.shields.io/badge/Ansible-EE0000?style=flat-square&logo=ansible&logoColor=white)
+![Rocky Linux](https://img.shields.io/badge/Rocky_Linux_9-10B981?style=flat-square&logo=rockylinux&logoColor=white)
+![FreeIPA](https://img.shields.io/badge/FreeIPA-IdM-blue?style=flat-square)
+![SELinux](https://img.shields.io/badge/SELinux-enforcing-orange?style=flat-square)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
+
+---
+
+## Objectif
+
+Ce projet démontre le déploiement automatisé d'une infrastructure IT complète
+pour une PME de 10 à 200 salariés, avec :
+
+- **Zéro licence logicielle** — contre $12–50/utilisateur/mois pour une stack
+  Microsoft 365 + Salesforce + Zoom équivalente
+- **SELinux en mode enforcing** sur toutes les VM Rocky Linux 9 — là où la
+  plupart des guides recommandent de le désactiver
+- **FreeIPA comme annuaire central** (LDAP + Kerberos + PKI + DNS) pour tous
+  les services sans exception
+- **Ansible exclusivement** : rôles structurés, idempotents, commentés, secrets
+  chiffrés avec Vault
+
+---
 ## État d'avancement
 
 > Ce dépôt est en construction active. La section ci-dessous précise ce qui
@@ -32,35 +61,6 @@
 L'architecture, le plan de déploiement et le diagramme ci-dessous décrivent le
 périmètre cible final du projet, c'est-à-dire l'objectif vers lequel le dépôt
 converge, et non l'état du code à date.
-
----
-# ADLin — Infrastructure PME open-source sur Proxmox VE
-
-> Remplacement complet d'une stack Microsoft 365 / Google Workspace / Salesforce
-> par des équivalents open-source auto-hébergés, déployés intégralement via Ansible
-> sur Rocky Linux 9 avec FreeIPA comme socle d'identité centralisé.
-
-![Ansible](https://img.shields.io/badge/Ansible-EE0000?style=flat-square&logo=ansible&logoColor=white)
-![Rocky Linux](https://img.shields.io/badge/Rocky_Linux_9-10B981?style=flat-square&logo=rockylinux&logoColor=white)
-![FreeIPA](https://img.shields.io/badge/FreeIPA-IdM-blue?style=flat-square)
-![SELinux](https://img.shields.io/badge/SELinux-enforcing-orange?style=flat-square)
-![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
-
----
-
-## Objectif
-
-Ce projet démontre le déploiement automatisé d'une infrastructure IT complète
-pour une PME de 10 à 200 salariés, avec :
-
-- **Zéro licence logicielle** — contre $12–50/utilisateur/mois pour une stack
-  Microsoft 365 + Salesforce + Zoom équivalente
-- **SELinux en mode enforcing** sur toutes les VM Rocky Linux 9 — là où la
-  plupart des guides recommandent de le désactiver
-- **FreeIPA comme annuaire central** (LDAP + Kerberos + PKI + DNS) pour tous
-  les services sans exception
-- **Ansible exclusivement** : rôles structurés, idempotents, commentés, secrets
-  chiffrés avec Vault
 
 ---
 
