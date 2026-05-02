@@ -1,3 +1,39 @@
+## État d'avancement
+
+> Ce dépôt est en construction active. La section ci-dessous précise ce qui
+> est implémenté et fonctionnel à date, et ce qui reste à livrer. L'architecture
+> décrite plus loin représente le périmètre cible final du projet.
+
+### ✅ Implémenté et fonctionnel
+
+- **Rôle `common`** — hardening Rocky Linux 9 : SELinux enforcing, EPEL/CRB,
+  paquets de base, chrony (client ou serveur NTP), enrollment FreeIPA client,
+  firewalld
+- **Rôle `freeipa_server`** — déploiement FreeIPA Server complet : DNS intégré,
+  PKI Dogtag, KRA (Key Recovery Authority), comptes de service LDAP en
+  `cn=sysaccounts`, groupes applicatifs POSIX, règles firewalld
+- **Rôle `reverse_proxy`** — Nginx avec TLS automatisé via certmonger et la CA
+  FreeIPA : principal de service Kerberos, certificat multi-SAN, SELinux booleans,
+  vhosts templatés (support Odoo longpolling), HSTS et en-têtes de sécurité
+- **Tooling** — Makefile (cibles `make deploy-*`), playbook `verify.yml`
+  (smoke tests SELinux, chrony, Kerberos, nginx, certmonger), Ansible Vault avec
+  pattern d'indirection `vars.yml` / `vault.yml`, ansible-lint et yamllint
+
+### 🚧 À livrer
+
+- **Rôle `mailserver`** — Postfix + Dovecot + SOGo + Rspamd avec authentification LDAP
+- **Rôle `nextcloud`** — Nextcloud avec backend `user_ldap` (override `ipaUniqueID`)
+- **Rôle `odoo`** — Odoo 19 CE + PostgreSQL avec module `auth_ldap`
+- **Rôle `rocketchat`** — Rocket.Chat 8.x via Docker Compose, sync LDAP/groupes
+- **Rôle `freepbx`** — FreePBX 17 + Asterisk 21 sur Debian 12
+
+### Périmètre cible
+
+L'architecture, le plan de déploiement et le diagramme ci-dessous décrivent le
+périmètre cible final du projet, c'est-à-dire l'objectif vers lequel le dépôt
+converge, et non l'état du code à date.
+
+---
 # ADLin — Infrastructure PME open-source sur Proxmox VE
 
 > Remplacement complet d'une stack Microsoft 365 / Google Workspace / Salesforce
