@@ -147,7 +147,7 @@ Marge disponible sur le ThinkCentre M920q : 5 Go RAM, 5 threads CPU.
 ```
 adlin/
 ├── README.md
-├── LICENSE                            # GPL-3.0
+├── LICENSE                            # MIT
 ├── ansible.cfg
 ├── Makefile                           # make deploy-freeipa, make deploy-all
 ├── requirements.yml                   # Collections + rôles Galaxy
