@@ -44,13 +44,22 @@ pour une PME de 10 à 200 salariés, avec :
 - **Rôle `reverse_proxy`** — Nginx avec TLS automatisé via certmonger et la CA
   FreeIPA : principal de service Kerberos, certificat multi-SAN, SELinux booleans,
   vhosts templatés (support Odoo longpolling), HSTS et en-têtes de sécurité
+- **Rôle `mailserver`** — stack mail complète avec authentification FreeIPA LDAP :
+  - Postfix : MTA, boîtes virtuelles LDAP, livraison LMTP → Dovecot, submission
+    SASL/STARTTLS (587), filtre antispam via milter Rspamd
+  - Dovecot : IMAPS (993), `auth_bind` FreeIPA (le mot de passe n'est jamais
+    exposé dans l'annuaire), stockage Maildir virtuel, ManageSieve (4190)
+  - Rspamd : filtre antispam milter, cache Redis (bayes, rate limiting)
+  - SOGo : webmail + CalDAV + CardDAV + ActiveSync, base PostgreSQL, frontend
+    nginx local (proxy01 → mail01:80 → sogod:20000)
+  - certmonger : certificat multi-SAN (`mail01.adlin.lab` + `mail.adlin.lab`)
+    via CA FreeIPA, renouvellement automatique
 - **Tooling** — Makefile (cibles `make deploy-*`), playbook `verify.yml`
   (smoke tests SELinux, chrony, Kerberos, nginx, certmonger), Ansible Vault avec
   pattern d'indirection `vars.yml` / `vault.yml`, ansible-lint et yamllint
 
 ### 🚧 À livrer
 
-- **Rôle `mailserver`** — Postfix + Dovecot + SOGo + Rspamd avec authentification LDAP
 - **Rôle `nextcloud`** — Nextcloud avec backend `user_ldap` (override `ipaUniqueID`)
 - **Rôle `odoo`** — Odoo 19 CE + PostgreSQL avec module `auth_ldap`
 - **Rôle `rocketchat`** — Rocket.Chat 8.x via Docker Compose, sync LDAP/groupes
@@ -79,7 +88,7 @@ converge, et non l'état du code à date.
     │ Rocky 9     │               │  Rocky 9    │              │  Rocky 9    │
     │ FreeIPA     │◄──────────────│  Nginx      │◄─────────────│  Nextcloud  │
     │ DNS · PKI   │   LDAPS/636   │  TLS        │   reverse    │  PHP-FPM    │
-    │ Kerberos    │               │  Let's Enc. │   proxy      │  Redis      │
+    │ Kerberos    │               │  certmonger │   proxy      │  Redis      │
     └─────────────┘               └──────┬──────┘              └─────────────┘
            ▲                             │
            │  LDAP/Kerberos              │ reverse proxy
@@ -120,7 +129,7 @@ converge, et non l'état du code à date.
 | Automatisation | Ansible + collections Galaxy + Vault | Rôles structurés, idempotents |
 | PKI interne | Dogtag CA (intégré FreeIPA) | Certificats services internes |
 | DNS | BIND9 intégré FreeIPA | Résolution interne + zones inverses |
-| Reverse proxy | Nginx + certbot (Let's Encrypt) | TLS terminaison centrale |
+| Reverse proxy | Nginx + certmonger (CA FreeIPA) | TLS terminaison centrale |
 | Secrets | Ansible Vault (AES-256) | Pattern `vars.yml` / `vault.yml` |
 
 ---
@@ -150,7 +159,7 @@ adlin/
 ├── LICENSE                            # MIT
 ├── ansible.cfg
 ├── Makefile                           # make deploy-freeipa, make deploy-all
-├── requirements.yml                   # Collections + rôles Galaxy
+├── requirements.yml                   # Collections Galaxy (ansible.posix, community.general, community.postgresql, freeipa…)
 │
 ├── inventory/
 │   ├── production/
@@ -181,13 +190,14 @@ adlin/
 │   └── 07-freepbx.yml
 │
 ├── roles/
-│   ├── common/                        # Hardening OS, SELinux, firewalld, IPA client
-│   ├── mailserver/                    # Postfix + Dovecot + SOGo + Rspamd
-│   ├── nextcloud/
-│   ├── odoo/
-│   ├── rocketchat/
-│   ├── freepbx/
-│   └── reverse_proxy/                 # Nginx + Let's Encrypt
+│   ├── common/                        # Hardening OS, SELinux, firewalld, IPA client  ✅
+│   ├── freeipa_server/                # FreeIPA Server, DNS, PKI, comptes de service  ✅
+│   ├── reverse_proxy/                 # Nginx + certmonger/FreeIPA PKI               ✅
+│   ├── mailserver/                    # Postfix + Dovecot + SOGo + Rspamd            ✅
+│   ├── nextcloud/                     #                                               🚧
+│   ├── odoo/                          #                                               🚧
+│   ├── rocketchat/                    #                                               🚧
+│   └── freepbx/                       #                                               🚧
 │
 └── .gitignore
 ```
@@ -307,16 +317,15 @@ documente et configure explicitement les booleans et contextes fichiers requis
 — aucun `setenforce 0` n'est utilisé.
 
 ```yaml
-# Exemple extrait de roles/nextcloud/tasks/selinux.yml
-- name: SELinux | Activer les booleans requis par Nextcloud
+# Exemple extrait de roles/reverse_proxy/tasks/selinux.yml
+- name: "selinux | Activer les booleans requis par nginx reverse proxy"
   ansible.posix.seboolean:
     name: "{{ item }}"
     state: true
     persistent: true
   loop:
-    - httpd_can_network_connect
-    - httpd_can_network_connect_db
-    - httpd_can_connect_ldap
+    - httpd_can_network_connect      # connexions sortantes vers les upstreams
+    - httpd_can_network_connect_db   # accès DB si nginx interroge directement
 ```
 
 **Firewalld**
