@@ -1,0 +1,30 @@
+---
+- name: Recharger postfix
+  ansible.builtin.systemd:
+    name: postfix
+    state: reloaded
+
+- name: Redémarrer postfix
+  ansible.builtin.systemd:
+    name: postfix
+    state: restarted
+
+- name: Redémarrer dovecot
+  ansible.builtin.systemd:
+    name: dovecot
+    state: restarted
+
+- name: Recharger nginx
+  ansible.builtin.systemd:
+    name: nginx
+    state: reloaded
+
+- name: Redémarrer rspamd
+  ansible.builtin.systemd:
+    name: rspamd
+    state: restarted
+
+- name: Redémarrer sogod
+  ansible.builtin.systemd:
+    name: sogod
+    state: restarted

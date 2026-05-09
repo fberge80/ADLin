@@ -1,0 +1,93 @@
+---
+# Dépôts tiers requis :
+#   - SOGo : paquets absents des dépôts EPEL/AppStream RHEL9
+#   - Rspamd : version récente absente des dépôts standard RHEL9
+
+- name: "install | Ajouter le dépôt SOGo GNUstep"
+  ansible.builtin.yum_repository:
+    name: sogo-gnustep
+    description: "SOGo — GNUstep runtime (Rocky Linux 9)"
+    baseurl: "{{ mailserver_sogo_gnustep_repo }}"
+    gpgcheck: false
+    enabled: true
+
+- name: "install | Ajouter le dépôt SOGo"
+  ansible.builtin.yum_repository:
+    name: sogo
+    description: "SOGo — webmail CalDAV CardDAV (Rocky Linux 9)"
+    baseurl: "{{ mailserver_sogo_repo }}"
+    gpgcheck: false
+    enabled: true
+
+- name: "install | Ajouter le dépôt Rspamd"
+  ansible.builtin.yum_repository:
+    name: rspamd
+    description: "Rspamd — filtre antispam (Rocky Linux 9)"
+    baseurl: "{{ mailserver_rspamd_repo }}"
+    gpgcheck: false
+    enabled: true
+
+- name: "install | Installer les paquets de la stack mail"
+  ansible.builtin.dnf:
+    name:
+      - postfix           # MTA — réception et acheminement du courrier
+      - postfix-ldap      # plugin LDAP pour la résolution des boîtes virtuelles
+      - dovecot           # serveur IMAP + SASL + LMTP
+      - dovecot-pigeonhole # filtres Sieve + service ManageSieve (4190)
+      - rspamd            # filtre antispam via milter Postfix
+      - redis             # cache Rspamd (bayes, rate limiting)
+      - sogo              # webmail + CalDAV + CardDAV + ActiveSync
+      - postgresql-server # base de données SOGo
+      - python3-psycopg2  # requis par community.postgresql
+      - nginx             # frontend SOGo (proxy local → sogod:20000)
+      - certmonger        # gestion automatique des certificats via FreeIPA CA
+    state: present
+
+- name: "install | Créer le groupe système vmail"
+  ansible.builtin.group:
+    name: "{{ mailserver_mail_group }}"
+    gid: "{{ mailserver_mail_gid }}"
+    system: true
+    state: present
+
+- name: "install | Créer l'utilisateur système vmail"
+  ansible.builtin.user:
+    name: "{{ mailserver_mail_user }}"
+    uid: "{{ mailserver_mail_uid }}"
+    group: "{{ mailserver_mail_group }}"
+    home: "{{ mailserver_mail_dir }}"
+    create_home: false
+    shell: /sbin/nologin
+    system: true
+    state: present
+
+- name: "install | Créer le répertoire racine des boîtes mail"
+  ansible.builtin.file:
+    path: "{{ mailserver_mail_dir }}"
+    state: directory
+    owner: "{{ mailserver_mail_user }}"
+    group: "{{ mailserver_mail_group }}"
+    mode: "0750"
+
+- name: "install | Initialiser le cluster PostgreSQL"
+  ansible.builtin.command: postgresql-setup --initdb
+  args:
+    creates: /var/lib/pgsql/data/PG_VERSION
+
+- name: "install | Démarrer et activer PostgreSQL"
+  ansible.builtin.systemd:
+    name: postgresql
+    state: started
+    enabled: true
+
+- name: "install | Démarrer et activer Redis"
+  ansible.builtin.systemd:
+    name: redis
+    state: started
+    enabled: true
+
+- name: "install | Démarrer et activer certmonger"
+  ansible.builtin.systemd:
+    name: certmonger
+    state: started
+    enabled: true

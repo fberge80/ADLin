@@ -1,0 +1,76 @@
+---
+- name: "dovecot | Activer les protocoles IMAP + LMTP + ManageSieve"
+  ansible.builtin.lineinfile:
+    path: /etc/dovecot/dovecot.conf
+    regexp: '^#?\s*protocols\s*='
+    line: 'protocols = imap lmtp sieve'
+  notify: Redémarrer dovecot
+
+- name: "dovecot | Déployer 10-auth.conf (authentification LDAP uniquement)"
+  ansible.builtin.template:
+    src: dovecot/conf.d/10-auth.conf.j2
+    dest: /etc/dovecot/conf.d/10-auth.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Redémarrer dovecot
+
+- name: "dovecot | Déployer auth-ldap.conf.ext (passdb/userdb)"
+  ansible.builtin.template:
+    src: dovecot/conf.d/auth-ldap.conf.ext.j2
+    dest: /etc/dovecot/conf.d/auth-ldap.conf.ext
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Redémarrer dovecot
+
+- name: "dovecot | Déployer dovecot-ldap.conf.ext (connexion FreeIPA LDAP)"
+  ansible.builtin.template:
+    src: dovecot/dovecot-ldap.conf.ext.j2
+    dest: /etc/dovecot/dovecot-ldap.conf.ext
+    owner: root
+    group: dovecot
+    mode: "0640"
+  notify: Redémarrer dovecot
+
+- name: "dovecot | Déployer 10-mail.conf (stockage Maildir)"
+  ansible.builtin.template:
+    src: dovecot/conf.d/10-mail.conf.j2
+    dest: /etc/dovecot/conf.d/10-mail.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Redémarrer dovecot
+
+- name: "dovecot | Déployer 10-master.conf (services LMTP, auth, ManageSieve)"
+  ansible.builtin.template:
+    src: dovecot/conf.d/10-master.conf.j2
+    dest: /etc/dovecot/conf.d/10-master.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Redémarrer dovecot
+
+- name: "dovecot | Déployer 10-ssl.conf (TLS via certmonger/FreeIPA)"
+  ansible.builtin.template:
+    src: dovecot/conf.d/10-ssl.conf.j2
+    dest: /etc/dovecot/conf.d/10-ssl.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Redémarrer dovecot
+
+- name: "dovecot | Déployer 90-sieve.conf (filtres Sieve + LMTP plugin)"
+  ansible.builtin.template:
+    src: dovecot/conf.d/90-sieve.conf.j2
+    dest: /etc/dovecot/conf.d/90-sieve.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Redémarrer dovecot
+
+- name: "dovecot | Démarrer et activer dovecot"
+  ansible.builtin.systemd:
+    name: dovecot
+    state: started
+    enabled: true

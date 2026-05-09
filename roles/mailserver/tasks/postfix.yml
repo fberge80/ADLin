@@ -1,0 +1,48 @@
+---
+- name: "postfix | Déployer la configuration principale (main.cf)"
+  ansible.builtin.template:
+    src: postfix/main.cf.j2
+    dest: /etc/postfix/main.cf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Recharger postfix
+
+- name: "postfix | Déployer la table LDAP des boîtes virtuelles"
+  ansible.builtin.template:
+    src: postfix/ldap-users.cf.j2
+    dest: /etc/postfix/ldap-users.cf
+    owner: root
+    group: postfix
+    mode: "0640"
+  notify: Recharger postfix
+
+- name: "postfix | Déployer la table LDAP des alias mail"
+  ansible.builtin.template:
+    src: postfix/ldap-aliases.cf.j2
+    dest: /etc/postfix/ldap-aliases.cf
+    owner: root
+    group: postfix
+    mode: "0640"
+  notify: Recharger postfix
+
+- name: "postfix | Activer le service submission (587/STARTTLS) dans master.cf"
+  ansible.builtin.blockinfile:
+    path: /etc/postfix/master.cf
+    marker: "# {mark} ANSIBLE MANAGED — submission 587"
+    block: |
+      submission inet n       -       n       -       -       smtpd
+        -o syslog_name=postfix/submission
+        -o smtpd_tls_security_level=encrypt
+        -o smtpd_sasl_auth_enable=yes
+        -o smtpd_tls_auth_only=yes
+        -o smtpd_reject_unlisted_recipient=no
+        -o smtpd_relay_restrictions=permit_sasl_authenticated,reject
+        -o milter_macro_daemon_name=ORIGINATING
+  notify: Recharger postfix
+
+- name: "postfix | Démarrer et activer postfix"
+  ansible.builtin.systemd:
+    name: postfix
+    state: started
+    enabled: true

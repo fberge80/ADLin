@@ -1,0 +1,36 @@
+---
+- name: "Mailserver | Installation des paquets et dépôts"
+  ansible.builtin.import_tasks: install.yml
+  tags: [mailserver, install]
+
+- name: "Mailserver | Principal Kerberos SMTP dans FreeIPA"
+  ansible.builtin.import_tasks: ipa_service.yml
+  tags: [mailserver, freeipa, ipa, pki]
+
+- name: "Mailserver | Demande du certificat TLS via certmonger"
+  ansible.builtin.import_tasks: certmonger.yml
+  tags: [mailserver, certmonger, tls, pki]
+
+- name: "Mailserver | Configuration Postfix"
+  ansible.builtin.import_tasks: postfix.yml
+  tags: [mailserver, postfix]
+
+- name: "Mailserver | Configuration Dovecot"
+  ansible.builtin.import_tasks: dovecot.yml
+  tags: [mailserver, dovecot]
+
+- name: "Mailserver | Configuration Rspamd"
+  ansible.builtin.import_tasks: rspamd.yml
+  tags: [mailserver, rspamd]
+
+- name: "Mailserver | Configuration SOGo"
+  ansible.builtin.import_tasks: sogo.yml
+  tags: [mailserver, sogo]
+
+- name: "Mailserver | Contextes SELinux"
+  ansible.builtin.import_tasks: selinux.yml
+  tags: [mailserver, selinux]
+
+- name: "Mailserver | Règles firewalld"
+  ansible.builtin.import_tasks: firewalld.yml
+  tags: [mailserver, firewalld]

@@ -1,0 +1,12 @@
+# /etc/dovecot/conf.d/auth-ldap.conf.ext — géré par Ansible
+passdb {
+  driver = ldap
+  args   = /etc/dovecot/dovecot-ldap.conf.ext
+}
+
+# userdb statique — uid/gid/home calculés localement sans requête LDAP
+# Tous les utilisateurs virtuels partagent le même compte système vmail
+userdb {
+  driver = static
+  args   = uid={{ mailserver_mail_uid }} gid={{ mailserver_mail_gid }} home={{ mailserver_mail_dir }}/{{ mailserver_domain }}/%n
+}

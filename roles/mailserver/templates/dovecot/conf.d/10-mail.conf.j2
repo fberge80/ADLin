@@ -1,0 +1,11 @@
+# /etc/dovecot/conf.d/10-mail.conf — géré par Ansible
+mail_location = maildir:{{ mailserver_mail_dir }}/{{ mailserver_domain }}/%n/Maildir
+
+namespace inbox {
+  inbox = yes
+}
+
+mail_uid = {{ mailserver_mail_uid }}
+mail_gid = {{ mailserver_mail_gid }}
+
+mail_max_userip_connections = 10

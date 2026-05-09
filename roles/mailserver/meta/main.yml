@@ -1,0 +1,18 @@
+---
+galaxy_info:
+  author: "Frédéric"
+  description: "Stack mail Postfix + Dovecot + SOGo + Rspamd avec authentification FreeIPA LDAP"
+  license: "MIT"
+  min_ansible_version: "2.15"
+  platforms:
+    - name: EL
+      versions:
+        - "9"
+
+# Dépendances implicites (non enforced par Ansible, documentées ici) :
+#   - ipa01.adlin.lab déployé et opérationnel (rôle freeipa_server)
+#   - mail01 enrollé comme client FreeIPA (common_ipa_enroll: true)
+#   - Groupe FreeIPA mail_users créé (rôle freeipa_server)
+#   - Compte de service svc_mail dans cn=sysaccounts (rôle freeipa_server)
+#   - vault_sogo_db_password ajouté dans vault.yml (ansible-vault edit)
+dependencies: []

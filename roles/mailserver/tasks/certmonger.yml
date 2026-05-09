@@ -1,0 +1,38 @@
+---
+# roles/mailserver/tasks/certmonger.yml
+#
+# Demande un certificat TLS multi-SAN via certmonger et la CA FreeIPA (Dogtag).
+# Le certificat couvre :
+#   CN  = mail01.adlin.lab  (nom interne de la VM)
+#   SAN = mail.adlin.lab    (FQDN exposé aux clients via reverse proxy)
+#
+# Utilisé par Postfix (STARTTLS sur 25/587) et Dovecot (IMAPS sur 993).
+
+- name: "certmonger | Vérifier les certificats déjà suivis"
+  ansible.builtin.command: getcert list
+  register: mailserver_getcert_list
+  changed_when: false
+
+- name: "certmonger | Demander le certificat TLS à FreeIPA CA"
+  ansible.builtin.shell: >
+    ipa-getcert request
+    -f {{ mailserver_cert_path }}
+    -k {{ mailserver_key_path }}
+    -K smtp/{{ mailserver_hostname }}@{{ ipa_realm }}
+    -N "CN={{ mailserver_hostname }}"
+    -D {{ mailserver_hostname }}
+    -D mail.{{ mailserver_domain }}
+  when: mailserver_cert_path not in mailserver_getcert_list.stdout
+  changed_when: true
+
+- name: "certmonger | Attendre la délivrance du certificat par Dogtag"
+  ansible.builtin.command: getcert list -f {{ mailserver_cert_path }}
+  register: mailserver_cert_status
+  until: "'status: MONITORING' in mailserver_cert_status.stdout"
+  retries: "{{ mailserver_cert_wait_retries }}"
+  delay: "{{ mailserver_cert_wait_delay }}"
+  changed_when: false
+
+- name: "certmonger | Afficher l'état du certificat"
+  ansible.builtin.debug:
+    msg: "{{ mailserver_cert_status.stdout_lines }}"

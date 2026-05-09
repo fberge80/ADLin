@@ -1,0 +1,57 @@
+# /etc/dovecot/conf.d/10-master.conf — géré par Ansible
+
+# IMAP — seul IMAPS (993) est exposé aux clients
+service imap-login {
+  inet_listener imap {
+    port = 0
+  }
+  inet_listener imaps {
+    port = 993
+    ssl  = yes
+  }
+}
+
+# POP3 désactivé
+service pop3-login {
+  inet_listener pop3 {
+    port = 0
+  }
+  inet_listener pop3s {
+    port = 0
+  }
+}
+
+# LMTP — Postfix livre le courrier via ce socket Unix dans son chroot
+# Le socket est dans /var/spool/postfix/private/ pour que Postfix puisse y accéder
+service lmtp {
+  unix_listener /var/spool/postfix/private/dovecot-lmtp {
+    mode  = 0600
+    user  = postfix
+    group = postfix
+  }
+}
+
+# Auth — Postfix se connecte à ce socket pour valider les credentials SASL
+service auth {
+  unix_listener /var/spool/postfix/private/auth {
+    mode  = 0660
+    user  = postfix
+    group = postfix
+  }
+  unix_listener auth-userdb {
+    mode  = 0600
+    user  = {{ mailserver_mail_user }}
+  }
+  user = dovecot
+}
+
+service auth-worker {
+  user = {{ mailserver_mail_user }}
+}
+
+# ManageSieve — gestion des filtres Sieve par les clients (port 4190)
+service managesieve-login {
+  inet_listener sieve {
+    port = 4190
+  }
+}

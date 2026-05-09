@@ -1,0 +1,24 @@
+---
+- name: "rspamd | Configurer Redis comme backend de cache"
+  ansible.builtin.template:
+    src: rspamd/redis.conf.j2
+    dest: /etc/rspamd/local.d/redis.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Redémarrer rspamd
+
+- name: "rspamd | Configurer les en-têtes milter ajoutés aux messages"
+  ansible.builtin.template:
+    src: rspamd/milter_headers.conf.j2
+    dest: /etc/rspamd/local.d/milter_headers.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Redémarrer rspamd
+
+- name: "rspamd | Démarrer et activer rspamd"
+  ansible.builtin.systemd:
+    name: rspamd
+    state: started
+    enabled: true

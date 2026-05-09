@@ -2,6 +2,7 @@
 collections:
   - name: ansible.posix
   - name: community.general
+  - name: community.postgresql
   - name: freeipa.ansible_freeipa
     version: ">=1.9.0"
   - name: nextcloud.admin

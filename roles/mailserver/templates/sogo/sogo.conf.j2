@@ -1,0 +1,61 @@
+{
+  /* Identité */
+  SOGoHostName    = "{{ mailserver_hostname }}";
+  SOGoLanguage    = French;
+  SOGoTimeZone    = "Europe/Paris";
+
+  /* Serveurs mail — connexions internes (localhost) */
+  SOGoIMAPServer           = "imaps://127.0.0.1:993";
+  SOGoSMTPServer           = "smtp://127.0.0.1:587";
+  SOGoSMTPAuthenticationType = PLAIN;
+
+  /* Dossiers IMAP standards */
+  SOGoSentFolderName   = Sent;
+  SOGoTrashFolderName  = Trash;
+  SOGoDraftsFolderName = Drafts;
+
+  /* Base de données PostgreSQL */
+  SOGoProfileURL          = "postgresql://{{ mailserver_sogo_db_user }}:{{ mailserver_sogo_db_password }}@127.0.0.1:5432/{{ mailserver_sogo_db_name }}/sogo_user_profile";
+  OCSFolderInfoURL        = "postgresql://{{ mailserver_sogo_db_user }}:{{ mailserver_sogo_db_password }}@127.0.0.1:5432/{{ mailserver_sogo_db_name }}/sogo_folder_info";
+  OCSSessionsFolderURL    = "postgresql://{{ mailserver_sogo_db_user }}:{{ mailserver_sogo_db_password }}@127.0.0.1:5432/{{ mailserver_sogo_db_name }}/sogo_sessions_folder";
+  OCSEMailAlarmsFolderURL = "postgresql://{{ mailserver_sogo_db_user }}:{{ mailserver_sogo_db_password }}@127.0.0.1:5432/{{ mailserver_sogo_db_name }}/sogo_alarms_folder";
+
+  /* Source d'identité LDAP — FreeIPA
+   * bindAsCurrentUser = YES : SOGo se connecte en LDAP avec les credentials
+   * de l'utilisateur, ce qui délègue l'authentification à FreeIPA (pas de
+   * mot de passe stocké dans la config SOGo)
+   */
+  SOGoUserSources = (
+    {
+      type              = ldap;
+      CNFieldName       = cn;
+      IDFieldName       = uid;
+      UIDFieldName      = uid;
+      baseDN            = "cn=users,cn=accounts,{{ mailserver_ldap_base }}";
+      bindDN            = "{{ mailserver_ldap_bind_dn }}";
+      bindPassword      = "{{ mailserver_ldap_bind_password }}";
+      canAuthenticate   = YES;
+      bindAsCurrentUser = YES;
+      displayName       = "ADLin Directory";
+      hostname          = "{{ mailserver_ldap_uri }}";
+      isAddressBook     = YES;
+      filter            = "memberOf=cn=mail_users,cn=groups,cn=accounts,{{ mailserver_ldap_base }}";
+      mailFieldNames    = (mail);
+    }
+  );
+
+  /* Performances */
+  WOWorkersCount           = {{ mailserver_sogo_workers }};
+  WOListenQueueSize        = 256;
+  SOGoMaximumPingInterval  = 3540;
+  SOGoMaximumSyncInterval  = 3540;
+  SOGoInternalSyncInterval = 30;
+
+  /* Sécurité */
+  SOGoXSRFValidationEnabled    = YES;
+  SOGoTrustProxyAuthentication = NO;
+  SOGoPasswordChangeEnabled    = NO;
+
+  /* ActiveSync */
+  SOGoEASAccessEnabled = YES;
+}

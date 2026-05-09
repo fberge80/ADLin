@@ -1,0 +1,42 @@
+---
+# Ports ouverts sur mail01 :
+#   25/tcp  — SMTP réception (MX entrant depuis internet)
+#   587/tcp — Submission STARTTLS (clients internes)
+#   993/tcp — IMAPS (clients internes via reverse proxy ou accès direct)
+#   4190/tcp — ManageSieve (gestion des filtres Sieve)
+#   80/tcp  — HTTP (SOGo — accès depuis proxy01 uniquement, réseau interne)
+
+- name: "firewalld | Autoriser SMTP (réception courrier entrant)"
+  ansible.posix.firewalld:
+    service: smtp
+    permanent: true
+    state: enabled
+    immediate: true
+
+- name: "firewalld | Autoriser Submission 587 (envoi SASL/STARTTLS)"
+  ansible.posix.firewalld:
+    service: smtp-submission
+    permanent: true
+    state: enabled
+    immediate: true
+
+- name: "firewalld | Autoriser IMAPS 993"
+  ansible.posix.firewalld:
+    service: imaps
+    permanent: true
+    state: enabled
+    immediate: true
+
+- name: "firewalld | Autoriser ManageSieve 4190"
+  ansible.posix.firewalld:
+    port: 4190/tcp
+    permanent: true
+    state: enabled
+    immediate: true
+
+- name: "firewalld | Autoriser HTTP (SOGo — depuis le réseau interne)"
+  ansible.posix.firewalld:
+    service: http
+    permanent: true
+    state: enabled
+    immediate: true

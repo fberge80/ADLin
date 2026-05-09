@@ -1,0 +1,28 @@
+# /etc/dovecot/dovecot-ldap.conf.ext — géré par Ansible
+# Connexion LDAP vers FreeIPA avec auth_bind :
+# Dovecot tente un bind LDAP avec le DN de l'utilisateur + son mot de passe.
+# FreeIPA vérifie le mot de passe via son moteur Kerberos en coulisses —
+# userPassword n'est pas exposé en clair dans l'annuaire.
+
+hosts            = {{ mailserver_ldap_uri | replace('ldaps://', '') | replace('ldap://', '') }}
+ldap_version     = 3
+tls              = yes
+tls_ca_cert_file = /etc/ipa/ca.crt
+
+# Compte de service pour la recherche initiale du DN utilisateur
+dn     = {{ mailserver_ldap_bind_dn }}
+dnpass = {{ mailserver_ldap_bind_password }}
+
+base   = cn=users,cn=accounts,{{ mailserver_ldap_base }}
+scope  = subtree
+deref  = never
+
+auth_bind = yes
+
+# Filtre de recherche — vérifie l'appartenance au groupe mail_users avant le bind
+pass_filter = (&(objectClass=inetOrgPerson)(uid=%n)(memberOf=cn=mail_users,cn=groups,cn=accounts,{{ mailserver_ldap_base }}))
+user_filter = (&(objectClass=inetOrgPerson)(uid=%n)(memberOf=cn=mail_users,cn=groups,cn=accounts,{{ mailserver_ldap_base }}))
+
+# Aucun attribut à récupérer — le driver userdb static fournit uid/gid/home
+pass_attrs =
+user_attrs =

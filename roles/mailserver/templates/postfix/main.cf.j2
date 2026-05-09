@@ -1,0 +1,86 @@
+# /etc/postfix/main.cf — géré par Ansible (rôle mailserver)
+
+# -----------------------------------------------------------------------------
+# Identité
+# -----------------------------------------------------------------------------
+myhostname = {{ mailserver_hostname }}
+mydomain   = {{ mailserver_domain }}
+myorigin   = $mydomain
+
+# -----------------------------------------------------------------------------
+# Écoute réseau
+# -----------------------------------------------------------------------------
+inet_interfaces = all
+inet_protocols  = all
+
+# -----------------------------------------------------------------------------
+# Domaines gérés
+# -----------------------------------------------------------------------------
+# mydestination exclut le domaine métier — il est géré via virtual_mailbox_domains
+mydestination = $myhostname, localhost.$mydomain, localhost
+
+# Livraison des boîtes virtuelles via LMTP → Dovecot
+virtual_mailbox_domains = {{ mailserver_domain }}
+virtual_transport       = lmtp:unix:private/dovecot-lmtp
+virtual_mailbox_base    = {{ mailserver_mail_dir }}
+
+# Résolution adresse email → chemin Maildir et alias via FreeIPA LDAP
+virtual_mailbox_maps = ldap:/etc/postfix/ldap-users.cf
+virtual_alias_maps   = ldap:/etc/postfix/ldap-aliases.cf
+
+# Propriétaire filesystem des boîtes virtuelles
+virtual_minimum_uid = {{ mailserver_mail_uid }}
+virtual_uid_maps    = static:{{ mailserver_mail_uid }}
+virtual_gid_maps    = static:{{ mailserver_mail_gid }}
+
+# -----------------------------------------------------------------------------
+# SASL — délégué à Dovecot via socket Unix
+# -----------------------------------------------------------------------------
+smtpd_sasl_type             = dovecot
+smtpd_sasl_path             = private/auth
+smtpd_sasl_auth_enable      = yes
+smtpd_sasl_security_options = noanonymous
+smtpd_sasl_local_domain     = $mydomain
+
+# -----------------------------------------------------------------------------
+# TLS
+# -----------------------------------------------------------------------------
+smtpd_tls_cert_file      = {{ mailserver_cert_path }}
+smtpd_tls_key_file       = {{ mailserver_key_path }}
+smtpd_tls_security_level = may
+smtpd_tls_protocols      = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1
+smtpd_tls_ciphers        = high
+smtpd_tls_loglevel       = 1
+
+smtp_tls_security_level  = may
+smtp_tls_protocols       = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1
+smtp_tls_loglevel        = 1
+# CA FreeIPA — valide les certificats des serveurs destinataires internes
+smtp_tls_CAfile          = /etc/ipa/ca.crt
+
+# -----------------------------------------------------------------------------
+# Restrictions
+# -----------------------------------------------------------------------------
+smtpd_relay_restrictions =
+    permit_mynetworks,
+    permit_sasl_authenticated,
+    reject_unauth_destination
+
+smtpd_recipient_restrictions =
+    permit_mynetworks,
+    permit_sasl_authenticated,
+    reject_unauth_destination,
+    reject_unknown_recipient_domain
+
+# -----------------------------------------------------------------------------
+# Filtre antispam — Rspamd milter
+# -----------------------------------------------------------------------------
+smtpd_milters         = inet:{{ mailserver_rspamd_milter_bind }}
+non_smtpd_milters     = inet:{{ mailserver_rspamd_milter_bind }}
+milter_default_action = accept
+milter_protocol       = 6
+
+# -----------------------------------------------------------------------------
+# Limites
+# -----------------------------------------------------------------------------
+message_size_limit = 52428800

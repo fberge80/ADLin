@@ -1,0 +1,23 @@
+---
+# playbooks/04-mailserver.yml
+#
+# Déploie la stack mail sur mail01 : Postfix + Dovecot + SOGo + Rspamd.
+#
+# Prérequis obligatoires avant d'exécuter ce playbook :
+#   1. FreeIPA opérationnel (01-freeipa-server.yml exécuté)
+#   2. mail01 enrollé comme client IPA (00-common.yml exécuté sur mail01)
+#   3. Groupe mail_users et compte svc_mail créés dans FreeIPA (01-freeipa-server.yml)
+#   4. vault_sogo_db_password ajouté dans vault.yml :
+#        ansible-vault edit inventory/production/group_vars/all/vault.yml
+#
+# Utilisation :
+#   ansible-playbook playbooks/04-mailserver.yml
+#   ansible-playbook playbooks/04-mailserver.yml --tags postfix
+#   ansible-playbook playbooks/04-mailserver.yml --tags dovecot,certmonger
+
+- name: "Stack mail — Postfix + Dovecot + SOGo + Rspamd — mail01"
+  hosts: mailservers
+  become: true
+
+  roles:
+    - role: mailserver

@@ -1,0 +1,15 @@
+# /etc/dovecot/conf.d/90-sieve.conf — géré par Ansible
+plugin {
+  sieve     = file:~/sieve;active=~/.dovecot.sieve
+  sieve_dir = ~/sieve
+}
+
+# Le plugin sieve est activé sur LMTP (livraison Postfix → Dovecot)
+# et LDA pour que les filtres s'appliquent à l'arrivée du courrier
+protocol lmtp {
+  mail_plugins = $mail_plugins sieve
+}
+
+protocol lda {
+  mail_plugins = $mail_plugins sieve
+}

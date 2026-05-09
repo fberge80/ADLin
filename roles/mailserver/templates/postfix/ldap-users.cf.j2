@@ -1,0 +1,14 @@
+# /etc/postfix/ldap-users.cf — géré par Ansible
+# Résolution : adresse email → chemin Maildir relatif à virtual_mailbox_base
+# Exemple : john@adlin.lab → adlin.lab/john/Maildir/
+server_host      = {{ mailserver_ldap_uri }}
+search_base      = cn=users,cn=accounts,{{ mailserver_ldap_base }}
+version          = 3
+bind             = yes
+bind_dn          = {{ mailserver_ldap_bind_dn }}
+bind_pw          = {{ mailserver_ldap_bind_password }}
+query_filter     = (&(objectClass=inetOrgPerson)(mail=%s)(memberOf=cn=mail_users,cn=groups,cn=accounts,{{ mailserver_ldap_base }}))
+result_attribute = uid
+result_format    = {{ mailserver_domain }}/%s/Maildir/
+start_tls        = yes
+tls_ca_cert_file = /etc/ipa/ca.crt

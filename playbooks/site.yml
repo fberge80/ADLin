@@ -29,7 +29,7 @@
 # -----------------------------------------------------------------------------
 
 # - import_playbook: 03-nextcloud.yml
-# - import_playbook: 04-mailserver.yml
+- import_playbook: 04-mailserver.yml
 # - import_playbook: 06-rocketchat.yml
 
 # -----------------------------------------------------------------------------

@@ -1,0 +1,23 @@
+---
+# Le répertoire /var/mail/vhosts/ doit avoir le contexte mail_spool_t pour que
+# Dovecot puisse y écrire en mode SELinux enforcing.
+# Sans ce contexte, les livraisons LMTP échoueraient avec AVC denied write.
+
+- name: "selinux | Appliquer le contexte mail_spool_t sur le répertoire vmail"
+  community.general.sefcontext:
+    target: "{{ mailserver_mail_dir }}(/.*)?"
+    setype: mail_spool_t
+    state: present
+  register: mailserver_sefcontext
+
+- name: "selinux | Restaurer les contextes SELinux sur le répertoire vmail"
+  ansible.builtin.command: "restorecon -Rv {{ mailserver_mail_dir }}"
+  when: mailserver_sefcontext.changed
+  changed_when: true
+
+# nginx doit pouvoir se connecter à sogod (localhost:20000)
+- name: "selinux | Autoriser nginx à initier des connexions réseau (sogod)"
+  ansible.posix.seboolean:
+    name: httpd_can_network_connect
+    state: true
+    persistent: true

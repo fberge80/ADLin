@@ -1,0 +1,46 @@
+---
+- name: "sogo | Créer la base de données PostgreSQL"
+  community.postgresql.postgresql_db:
+    name: "{{ mailserver_sogo_db_name }}"
+    state: present
+  become_user: postgres
+
+- name: "sogo | Créer l'utilisateur PostgreSQL et lui accorder les droits"
+  community.postgresql.postgresql_user:
+    name: "{{ mailserver_sogo_db_user }}"
+    password: "{{ mailserver_sogo_db_password }}"
+    db: "{{ mailserver_sogo_db_name }}"
+    priv: "ALL"
+    state: present
+  become_user: postgres
+  no_log: true
+
+- name: "sogo | Déployer la configuration SOGo"
+  ansible.builtin.template:
+    src: sogo/sogo.conf.j2
+    dest: /etc/sogo/sogo.conf
+    owner: sogo
+    group: sogo
+    mode: "0640"
+  notify: Redémarrer sogod
+
+- name: "sogo | Déployer la configuration nginx (frontend SOGo)"
+  ansible.builtin.template:
+    src: sogo/nginx.conf.j2
+    dest: /etc/nginx/conf.d/sogo.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Recharger nginx
+
+- name: "sogo | Démarrer et activer sogod"
+  ansible.builtin.systemd:
+    name: sogod
+    state: started
+    enabled: true
+
+- name: "sogo | Démarrer et activer nginx"
+  ansible.builtin.systemd:
+    name: nginx
+    state: started
+    enabled: true

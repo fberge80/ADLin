@@ -1,0 +1,62 @@
+---
+# roles/mailserver/defaults/main.yml
+
+mailserver_hostname: "mail01.adlin.lab"
+mailserver_domain:   "adlin.lab"
+
+# -----------------------------------------------------------------------------
+# Utilisateur système propriétaire des boîtes mail virtuelles
+# -----------------------------------------------------------------------------
+
+mailserver_mail_user:  "vmail"
+mailserver_mail_group: "vmail"
+mailserver_mail_uid:   5000
+mailserver_mail_gid:   5000
+mailserver_mail_dir:   "/var/mail/vhosts"
+
+# -----------------------------------------------------------------------------
+# TLS — certmonger via CA FreeIPA (Dogtag)
+# -----------------------------------------------------------------------------
+
+mailserver_cert_path:         "/etc/pki/tls/certs/mail01.adlin.lab.crt"
+mailserver_key_path:          "/etc/pki/tls/private/mail01.adlin.lab.key"
+mailserver_cert_wait_retries: 30
+mailserver_cert_wait_delay:   10
+
+# -----------------------------------------------------------------------------
+# LDAP — compte de service svc_mail (défini dans group_vars/all/vars.yml)
+# -----------------------------------------------------------------------------
+
+mailserver_ldap_uri:           "{{ freeipa_ldap_uri }}"
+mailserver_ldap_base:          "{{ freeipa_base_dn }}"
+mailserver_ldap_bind_dn:       "uid=svc_mail,cn=sysaccounts,cn=etc,{{ freeipa_base_dn }}"
+mailserver_ldap_bind_password: "{{ ldap_bind_password_mail }}"
+
+# Seuls les membres du groupe mail_users ont accès à la messagerie
+mailserver_ldap_mail_filter: >-
+  (&(objectClass=inetOrgPerson)(uid=%n)
+  (memberOf=cn=mail_users,cn=groups,cn=accounts,{{ mailserver_ldap_base }}))
+
+# -----------------------------------------------------------------------------
+# Rspamd
+# -----------------------------------------------------------------------------
+
+mailserver_rspamd_milter_bind: "127.0.0.1:11332"
+
+# -----------------------------------------------------------------------------
+# SOGo
+# -----------------------------------------------------------------------------
+
+mailserver_sogo_port:        20000
+mailserver_sogo_workers:     2
+mailserver_sogo_db_name:     "sogo"
+mailserver_sogo_db_user:     "sogo"
+mailserver_sogo_db_password: "{{ sogo_db_password }}"
+
+# -----------------------------------------------------------------------------
+# Dépôts tiers — à vérifier avant déploiement
+# -----------------------------------------------------------------------------
+
+mailserver_sogo_gnustep_repo: "https://packages.sogo.nu/rhel/9/GNUstep/x86_64/"
+mailserver_sogo_repo:         "https://packages.sogo.nu/rhel/9/SOGo/x86_64/"
+mailserver_rspamd_repo:       "https://rspamd.com/rpm-stable/centos-9/"
