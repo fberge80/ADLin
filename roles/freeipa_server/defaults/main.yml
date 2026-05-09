@@ -13,16 +13,16 @@
 freeipa_server_service_accounts:
   - uid: svc_nextcloud
     description: "Compte de service Nextcloud — lecture LDAP"
-    password: "{{ ldap_svc_nextcloud_password }}"
+    password: "{{ ldap_bind_password_nextcloud }}"
   - uid: svc_mail
     description: "Compte de service Postfix/Dovecot/SOGo — lookup LDAP"
-    password: "{{ ldap_svc_mail_password }}"
+    password: "{{ ldap_bind_password_mail }}"
   - uid: svc_odoo
     description: "Compte de service Odoo — authentification LDAP"
-    password: "{{ ldap_svc_odoo_password }}"
+    password: "{{ ldap_bind_password_odoo }}"
   - uid: svc_rocketchat
     description: "Compte de service Rocket.Chat — sync LDAP/groupes"
-    password: "{{ ldap_svc_rocketchat_password }}"
+    password: "{{ ldap_bind_password_rocketchat }}"
 
 # -----------------------------------------------------------------------------
 # Groupes applicatifs FreeIPA

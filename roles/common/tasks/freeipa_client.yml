@@ -29,7 +29,7 @@
   ansible.builtin.include_role:
     name: freeipa.ansible_freeipa.ipaclient
   vars:
-    ipaadmin_password: "{{ vault_ipa_admin_password }}"
+    ipaadmin_password: "{{ ipa_admin_password }}"
     ipadomain: "{{ ipa_domain }}"
     iparealm: "{{ ipa_realm }}"
     ipaserver_hostname: "{{ ipa_server }}"
