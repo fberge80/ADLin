@@ -45,6 +45,7 @@
   become_user: odoo
   register: odoo_auth_ldap_state
   changed_when: false
+  failed_when: false
 
 - name: "init | Activer le module auth_ldap"
   ansible.builtin.command:
