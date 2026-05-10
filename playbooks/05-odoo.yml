@@ -1,0 +1,26 @@
+---
+# playbooks/05-odoo.yml
+#
+# Déploie Odoo 19 CE sur erp01 : RPM nightly + PostgreSQL + auth_ldap.
+#
+# Prérequis obligatoires :
+#   1. FreeIPA opérationnel (01-freeipa-server.yml exécuté)
+#   2. erp01 enrollé comme client IPA (00-common.yml exécuté sur erp01)
+#   3. svc_odoo et odoo_users créés dans FreeIPA (01-freeipa-server.yml)
+#   4. Vhost erp.adlin.lab → erp01:8069 configuré sur proxy01 (02-reverse-proxy.yml)
+#
+# Post-déploiement (manuel) :
+#   Configurer le serveur LDAP dans Settings → Technical → LDAP Servers
+#   Voir docs/superpowers/specs/2026-05-10-odoo-role-design.md pour les valeurs
+#
+# Utilisation :
+#   ansible-playbook playbooks/05-odoo.yml
+#   ansible-playbook playbooks/05-odoo.yml --tags install
+#   ansible-playbook playbooks/05-odoo.yml --tags database
+
+- name: "Odoo 19 CE — erp01"
+  hosts: odoo
+  become: true
+
+  roles:
+    - role: odoo
