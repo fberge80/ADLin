@@ -1,0 +1,77 @@
+---
+# roles/odoo/tasks/init.yml
+#
+# Initialise la base Odoo et active auth_ldap — chaque opération est protégée
+# par un guard idempotent.
+#
+# --workers=0 force le mode single-thread pour l'initialisation, indépendamment
+# de la valeur dans odoo.conf (qui serait active pour le service daemon).
+#
+# Séquence :
+#   1. Vérifier si la base est initialisée (table ir_module_module)
+#   2. Si non : --init base --stop-after-init
+#   3. Vérifier si auth_ldap est installé
+#   4. Si non : -i auth_ldap --stop-after-init
+#   5. Démarrer et activer le service odoo
+
+- name: "init | Vérifier si la base Odoo est initialisée (table ir_module_module)"
+  ansible.builtin.command:
+    cmd: >
+      psql -d {{ odoo_db_name }} -tAc
+      "SELECT EXISTS (SELECT 1 FROM information_schema.tables
+       WHERE table_schema='public' AND table_name='ir_module_module')"
+  become_user: odoo
+  register: odoo_db_initialized
+  changed_when: false
+  failed_when: false
+
+- name: "init | Initialiser la base Odoo (--init base)"
+  ansible.builtin.command:
+    cmd: >
+      odoo -d {{ odoo_db_name }}
+      --init base
+      --workers=0
+      --stop-after-init
+      --config {{ odoo_config_file }}
+  become_user: odoo
+  when: "odoo_db_initialized.stdout.strip() != 't'"
+  changed_when: true
+
+- name: "init | Vérifier si le module auth_ldap est installé"
+  ansible.builtin.command:
+    cmd: >
+      psql -d {{ odoo_db_name }} -tAc
+      "SELECT state FROM ir_module_module WHERE name='auth_ldap'"
+  become_user: odoo
+  register: odoo_auth_ldap_state
+  changed_when: false
+
+- name: "init | Activer le module auth_ldap"
+  ansible.builtin.command:
+    cmd: >
+      odoo -d {{ odoo_db_name }}
+      -i auth_ldap
+      --workers=0
+      --stop-after-init
+      --config {{ odoo_config_file }}
+  become_user: odoo
+  when: "odoo_auth_ldap_state.stdout.strip() != 'installed'"
+  changed_when: true
+
+- name: "init | Démarrer et activer le service Odoo"
+  ansible.builtin.systemd:
+    name: odoo
+    state: started
+    enabled: true
+
+- name: "init | Afficher les instructions de configuration LDAP post-déploiement"
+  ansible.builtin.debug:
+    msg:
+      - "Odoo déployé sur https://{{ odoo_fqdn_public }}"
+      - "Configurer LDAP manuellement : Settings → Technical → LDAP Servers"
+      - "  LDAP Server     : ldaps://ipa01.adlin.lab"
+      - "  Port            : 636"
+      - "  Bind DN         : {{ odoo_ldap_bind_dn }}"
+      - "  Base DN         : {{ odoo_ldap_base }}"
+      - "  Filter          : {{ odoo_ldap_filter }}"
+      - "  TLS             : cocher 'Use TLS'"
