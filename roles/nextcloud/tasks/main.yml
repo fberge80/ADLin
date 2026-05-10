@@ -1,2 +1,32 @@
 ---
-# Stub — complété dans la Task 13
+- name: "Nextcloud | Installation dépôts, paquets et tarball"
+  ansible.builtin.import_tasks: install.yml
+  tags: [nextcloud, install]
+
+- name: "Nextcloud | Principal Kerberos HTTP dans FreeIPA"
+  ansible.builtin.import_tasks: ipa_service.yml
+  tags: [nextcloud, freeipa, ipa, pki]
+
+- name: "Nextcloud | Certificat TLS via certmonger"
+  ansible.builtin.import_tasks: certmonger.yml
+  tags: [nextcloud, certmonger, tls, pki]
+
+- name: "Nextcloud | Base de données MariaDB"
+  ansible.builtin.import_tasks: database.yml
+  tags: [nextcloud, database, mariadb]
+
+- name: "Nextcloud | Configuration Apache + PHP + installation occ"
+  ansible.builtin.import_tasks: nextcloud.yml
+  tags: [nextcloud, config, occ]
+
+- name: "Nextcloud | Configuration LDAP FreeIPA (user_ldap)"
+  ansible.builtin.import_tasks: ldap.yml
+  tags: [nextcloud, ldap, freeipa]
+
+- name: "Nextcloud | Contextes SELinux"
+  ansible.builtin.import_tasks: selinux.yml
+  tags: [nextcloud, selinux]
+
+- name: "Nextcloud | Règles firewalld"
+  ansible.builtin.import_tasks: firewalld.yml
+  tags: [nextcloud, firewalld]
