@@ -7,6 +7,9 @@
     ServerAlias {{ nextcloud_hostname }}
     DocumentRoot {{ nextcloud_webroot }}
 
+    # Requis pour WebDAV/CalDAV/CardDAV — AllowOverride ne peut pas surcharger cette directive
+    AllowEncodedSlashes NoDecode
+
     SSLEngine on
     SSLCertificateFile    {{ nextcloud_cert_path }}
     SSLCertificateKeyFile {{ nextcloud_key_path }}
