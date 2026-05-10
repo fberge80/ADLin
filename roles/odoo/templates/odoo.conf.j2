@@ -1,0 +1,25 @@
+; {{ ansible_managed }}
+; Configuration Odoo 19 CE — erp01.adlin.lab
+; Déployé dans {{ odoo_config_file }}
+
+[options]
+; Connexion PostgreSQL via socket Unix (peer auth — pas de mot de passe)
+db_host          = False
+db_port          = False
+db_user          = {{ odoo_db_user }}
+db_name          = {{ odoo_db_name }}
+
+; Workers multi-process
+; Sans workers > 0, le port longpolling n'existe pas et /longpolling échoue
+workers          = {{ odoo_workers }}
+max_cron_threads = {{ odoo_max_cron_threads }}
+longpolling_port = {{ odoo_longpolling_port }}
+
+; Indispensable derrière nginx — lit X-Forwarded-Proto pour générer des URLs HTTPS
+; Sans proxy_mode = True, Odoo génère des redirections vers http:// au lieu de https://
+proxy_mode       = True
+
+; Données et logs
+data_dir         = {{ odoo_data_dir }}
+logfile          = {{ odoo_log_file }}
+log_level        = info
