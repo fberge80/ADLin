@@ -54,13 +54,24 @@ pour une PME de 10 à 200 salariés, avec :
     nginx local (proxy01 → mail01:80 → sogod:20000)
   - certmonger : certificat multi-SAN (`mail01.adlin.lab` + `mail.adlin.lab`)
     via CA FreeIPA, renouvellement automatique
+- **Rôle `nextcloud`** — Nextcloud 33 sur Apache + PHP 8.3 (Remi) avec
+  authentification LDAP FreeIPA entièrement automatisée via `occ` :
+  - `user_ldap` activé et configuré (serveur, filtre, bind DN) via `occ ldap:set-config`
+  - `ipaUniqueID` comme attribut UUID — évite les doublons de comptes lors des
+    reconnexions LDAP (valeur stable contrairement à `entryUUID`)
+  - Accès restreint au groupe FreeIPA `nextcloud_users`
+  - MariaDB locale (utf8mb4_unicode_ci), données hors webroot dans `/var/nc_data`
+  - Certificat TLS double-SAN (`cloud01.adlin.lab` + `cloud.adlin.lab`) via
+    certmonger/Dogtag, renouvellement automatique
+  - `AllowEncodedSlashes NoDecode` — requis pour CalDAV/CardDAV avec Apache
+  - SELinux enforcing (`httpd_sys_rw_content_t` sur `/var/nc_data`), HTTPS
+    uniquement (443/tcp)
 - **Tooling** — Makefile (cibles `make deploy-*`), playbook `verify.yml`
   (smoke tests SELinux, chrony, Kerberos, nginx, certmonger), Ansible Vault avec
   pattern d'indirection `vars.yml` / `vault.yml`, ansible-lint et yamllint
 
 ### 🚧 À livrer
 
-- **Rôle `nextcloud`** — Nextcloud avec backend `user_ldap` (override `ipaUniqueID`)
 - **Rôle `odoo`** — Odoo 19 CE + PostgreSQL avec module `auth_ldap`
 - **Rôle `rocketchat`** — Rocket.Chat 8.x via Docker Compose, sync LDAP/groupes
 - **Rôle `freepbx`** — FreePBX 17 + Asterisk 21 sur Debian 12
@@ -87,8 +98,8 @@ converge, et non l'état du code à date.
     │   ipa01     │               │  proxy01    │              │  cloud01    │
     │ Rocky 9     │               │  Rocky 9    │              │  Rocky 9    │
     │ FreeIPA     │◄──────────────│  Nginx      │◄─────────────│  Nextcloud  │
-    │ DNS · PKI   │   LDAPS/636   │  TLS        │   reverse    │  PHP-FPM    │
-    │ Kerberos    │               │  certmonger │   proxy      │  Redis      │
+    │ DNS · PKI   │   LDAPS/636   │  TLS        │   reverse    │  Apache     │
+    │ Kerberos    │               │  certmonger │   proxy      │  PHP 8.3    │
     └─────────────┘               └──────┬──────┘              └─────────────┘
            ▲                             │
            │  LDAP/Kerberos              │ reverse proxy
@@ -194,7 +205,7 @@ adlin/
 │   ├── freeipa_server/                # FreeIPA Server, DNS, PKI, comptes de service  ✅
 │   ├── reverse_proxy/                 # Nginx + certmonger/FreeIPA PKI               ✅
 │   ├── mailserver/                    # Postfix + Dovecot + SOGo + Rspamd            ✅
-│   ├── nextcloud/                     #                                               🚧
+│   ├── nextcloud/                     # Nextcloud 33, Apache/PHP 8.3, MariaDB, LDAP   ✅
 │   ├── odoo/                          #                                               🚧
 │   ├── rocketchat/                    #                                               🚧
 │   └── freepbx/                       #                                               🚧
