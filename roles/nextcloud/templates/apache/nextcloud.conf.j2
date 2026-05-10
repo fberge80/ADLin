@@ -1,0 +1,29 @@
+# {{ ansible_managed }}
+# VirtualHost Nextcloud — cloud01.adlin.lab
+# HTTPS uniquement : le port 80 est géré par proxy01 (redirection → HTTPS)
+
+<VirtualHost *:443>
+    ServerName  {{ nextcloud_fqdn_public }}
+    ServerAlias {{ nextcloud_hostname }}
+    DocumentRoot {{ nextcloud_webroot }}
+
+    SSLEngine on
+    SSLCertificateFile    {{ nextcloud_cert_path }}
+    SSLCertificateKeyFile {{ nextcloud_key_path }}
+
+    <Directory {{ nextcloud_webroot }}>
+        Options +FollowSymlinks
+        AllowOverride All
+        Require all granted
+        <IfModule mod_dav.c>
+            Dav off
+        </IfModule>
+    </Directory>
+
+    <IfModule mod_headers.c>
+        Header always set Strict-Transport-Security "max-age=15552000; includeSubDomains"
+    </IfModule>
+
+    ErrorLog  /var/log/httpd/nextcloud_error.log
+    CustomLog /var/log/httpd/nextcloud_access.log combined
+</VirtualHost>
