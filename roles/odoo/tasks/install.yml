@@ -1,0 +1,24 @@
+---
+# roles/odoo/tasks/install.yml
+#
+# Le paquet odoo du dépôt nightly déclare python3.11 comme dépendance.
+# EPEL est déjà activé par le rôle common — python3.11 disponible sans compilation.
+# python3-psycopg2 est requis par les modules community.postgresql.
+
+- name: "install | Ajouter le dépôt Odoo nightly"
+  ansible.builtin.yum_repository:
+    name: odoo
+    description: "Odoo {{ odoo_version }} — dépôt nightly officiel (RPM)"
+    baseurl: "{{ odoo_repo_url }}"
+    gpgcheck: false
+    enabled: true
+
+- name: "install | Installer python3-psycopg2 (requis par community.postgresql)"
+  ansible.builtin.dnf:
+    name: python3-psycopg2
+    state: present
+
+- name: "install | Installer le paquet odoo (tire python3.11 depuis EPEL)"
+  ansible.builtin.dnf:
+    name: odoo
+    state: present
