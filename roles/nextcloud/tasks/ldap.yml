@@ -1,0 +1,105 @@
+---
+# roles/nextcloud/tasks/ldap.yml
+#
+# Configure l'authentification LDAP FreeIPA via occ.
+#
+# ipaUniqueID comme attribut UUID : valeur stable assignée par FreeIPA à chaque
+# entrée, contrairement à entryUUID qui peut changer. Sans cet attribut, Nextcloud
+# duplique les comptes utilisateurs à chaque reconnexion LDAP.
+#
+# Guard idempotent : si une config LDAP active existe déjà (ldap:show-config
+# retourne 'configID'), on réutilise nextcloud_ldap_config_id (défaut: s0).
+# Les ldap:set-config sont idempotents — sûrs à rejouer.
+
+- name: "ldap | Activer l'application user_ldap"
+  ansible.builtin.command:
+    cmd: php {{ nextcloud_webroot }}/occ app:enable user_ldap
+  become_user: apache
+  changed_when: false
+
+- name: "ldap | Vérifier si une config LDAP existe"
+  ansible.builtin.command:
+    cmd: php {{ nextcloud_webroot }}/occ ldap:show-config
+  become_user: apache
+  register: nextcloud_ldap_show
+  changed_when: false
+
+- name: "ldap | Créer une config LDAP vide si nécessaire"
+  ansible.builtin.command:
+    cmd: php {{ nextcloud_webroot }}/occ ldap:create-empty-config
+  become_user: apache
+  when: "'configID' not in nextcloud_ldap_show.stdout"
+  changed_when: true
+
+- name: "ldap | Serveur LDAP (host)"
+  ansible.builtin.command:
+    cmd: >
+      php {{ nextcloud_webroot }}/occ ldap:set-config
+      {{ nextcloud_ldap_config_id }} ldapHost {{ nextcloud_ldap_host }}
+  become_user: apache
+  changed_when: false
+
+- name: "ldap | Port LDAP (636 — LDAPS)"
+  ansible.builtin.command:
+    cmd: >
+      php {{ nextcloud_webroot }}/occ ldap:set-config
+      {{ nextcloud_ldap_config_id }} ldapPort 636
+  become_user: apache
+  changed_when: false
+
+- name: "ldap | DN du compte de service"
+  ansible.builtin.command:
+    cmd: >
+      php {{ nextcloud_webroot }}/occ ldap:set-config
+      {{ nextcloud_ldap_config_id }} ldapAgentName "{{ nextcloud_ldap_bind_dn }}"
+  become_user: apache
+  changed_when: false
+
+- name: "ldap | Mot de passe du compte de service"
+  ansible.builtin.command:
+    cmd: >
+      php {{ nextcloud_webroot }}/occ ldap:set-config
+      {{ nextcloud_ldap_config_id }} ldapAgentPassword "{{ nextcloud_ldap_bind_pass }}"
+  become_user: apache
+  changed_when: false
+  no_log: true
+
+- name: "ldap | Base DN"
+  ansible.builtin.command:
+    cmd: >
+      php {{ nextcloud_webroot }}/occ ldap:set-config
+      {{ nextcloud_ldap_config_id }} ldapBase "{{ nextcloud_ldap_base_dn }}"
+  become_user: apache
+  changed_when: false
+
+- name: "ldap | Filtre utilisateurs (groupe nextcloud_users)"
+  ansible.builtin.command:
+    cmd: >
+      php {{ nextcloud_webroot }}/occ ldap:set-config
+      {{ nextcloud_ldap_config_id }} ldapUserFilter "{{ nextcloud_ldap_user_filter }}"
+  become_user: apache
+  changed_when: false
+
+- name: "ldap | Attribut UUID → ipaUniqueID (évite les doublons de comptes)"
+  ansible.builtin.command:
+    cmd: >
+      php {{ nextcloud_webroot }}/occ ldap:set-config
+      {{ nextcloud_ldap_config_id }} ldapUuidUserAttribute ipaUniqueID
+  become_user: apache
+  changed_when: false
+
+- name: "ldap | Filtre de connexion (login = uid)"
+  ansible.builtin.command:
+    cmd: >
+      php {{ nextcloud_webroot }}/occ ldap:set-config
+      {{ nextcloud_ldap_config_id }} ldapLoginFilter "uid=%uid"
+  become_user: apache
+  changed_when: false
+
+- name: "ldap | Activer la configuration LDAP"
+  ansible.builtin.command:
+    cmd: >
+      php {{ nextcloud_webroot }}/occ ldap:set-config
+      {{ nextcloud_ldap_config_id }} ldapConfigurationActive 1
+  become_user: apache
+  changed_when: false
