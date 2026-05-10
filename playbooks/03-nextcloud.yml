@@ -1,0 +1,23 @@
+---
+# playbooks/03-nextcloud.yml
+#
+# Déploie Nextcloud 33 sur cloud01 : Apache + PHP 8.3 (Remi) + MariaDB + LDAP FreeIPA.
+#
+# Prérequis obligatoires :
+#   1. FreeIPA opérationnel (01-freeipa-server.yml exécuté)
+#   2. cloud01 enrollé comme client IPA (00-common.yml exécuté sur cloud01)
+#   3. svc_nextcloud et nextcloud_users créés dans FreeIPA (01-freeipa-server.yml)
+#   4. vault_nextcloud_db_password et vault_nextcloud_admin_password dans vault.yml
+#   5. Vhost cloud.adlin.lab → cloud01:443 configuré sur proxy01 (02-reverse-proxy.yml)
+#
+# Utilisation :
+#   ansible-playbook playbooks/03-nextcloud.yml
+#   ansible-playbook playbooks/03-nextcloud.yml --tags install
+#   ansible-playbook playbooks/03-nextcloud.yml --tags ldap
+
+- name: "Nextcloud 33 — cloud01"
+  hosts: nextcloud
+  become: true
+
+  roles:
+    - role: nextcloud
