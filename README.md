@@ -66,13 +66,20 @@ pour une PME de 10 à 200 salariés, avec :
   - `AllowEncodedSlashes NoDecode` — requis pour CalDAV/CardDAV avec Apache
   - SELinux enforcing (`httpd_sys_rw_content_t` sur `/var/nc_data`), HTTPS
     uniquement (443/tcp)
+- **Rôle `odoo`** — Odoo 19 CE via RPM nightly officiel avec authentification
+  FreeIPA LDAP (module `auth_ldap` activé automatiquement via CLI) :
+  - PostgreSQL local (peer authentication — pas de mot de passe TCP)
+  - Workers multi-process (4 workers + longpolling port 8072)
+  - `proxy_mode = True` — indispensable derrière nginx (X-Forwarded-Proto → HTTPS)
+  - Guards idempotents : init base (table `ir_module_module`) + auth_ldap (state)
+  - Pas de TLS sur erp01 — proxy01 termine le TLS, Odoo écoute en HTTP
+  - Configuration LDAP post-déploiement documentée (Settings → Technical → LDAP)
 - **Tooling** — Makefile (cibles `make deploy-*`), playbook `verify.yml`
   (smoke tests SELinux, chrony, Kerberos, nginx, certmonger), Ansible Vault avec
   pattern d'indirection `vars.yml` / `vault.yml`, ansible-lint et yamllint
 
 ### 🚧 À livrer
 
-- **Rôle `odoo`** — Odoo 19 CE + PostgreSQL avec module `auth_ldap`
 - **Rôle `rocketchat`** — Rocket.Chat 8.x via Docker Compose, sync LDAP/groupes
 - **Rôle `freepbx`** — FreePBX 17 + Asterisk 21 sur Debian 12
 
@@ -206,7 +213,7 @@ adlin/
 │   ├── reverse_proxy/                 # Nginx + certmonger/FreeIPA PKI               ✅
 │   ├── mailserver/                    # Postfix + Dovecot + SOGo + Rspamd            ✅
 │   ├── nextcloud/                     # Nextcloud 33, Apache/PHP 8.3, MariaDB, LDAP   ✅
-│   ├── odoo/                          #                                               🚧
+│   ├── odoo/                          # Odoo 19 CE, PostgreSQL peer auth, auth_ldap   ✅
 │   ├── rocketchat/                    #                                               🚧
 │   └── freepbx/                       #                                               🚧
 │
