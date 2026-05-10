@@ -1,0 +1,92 @@
+---
+# roles/nextcloud/tasks/install.yml
+#
+# Rocky 9 AppStream = PHP 8.1. Nextcloud 33 exige PHP ≥ 8.2.
+# Remi est le dépôt de référence pour PHP récent sur RHEL/Rocky.
+
+- name: "install | Installer le dépôt Remi"
+  ansible.builtin.dnf:
+    name: "{{ nextcloud_remi_repo_url }}"
+    state: present
+
+- name: "install | Activer le module PHP 8.3 (Remi)"
+  ansible.builtin.command:
+    cmd: dnf module enable php:remi-8.3 -y
+  changed_when: false
+
+- name: "install | Installer Apache, PHP 8.3 et modules Nextcloud"
+  ansible.builtin.dnf:
+    name:
+      - httpd
+      - mod_ssl
+      - php
+      - php-gd
+      - php-mbstring
+      - php-intl
+      - php-xml
+      - php-zip
+      - php-curl
+      - php-ldap
+      - php-mysqlnd
+      - php-opcache
+      - php-bcmath
+      - php-gmp
+      - php-imagick
+      - bzip2
+      - certmonger
+      - mariadb-server
+      - python3-PyMySQL
+    state: present
+
+- name: "install | Démarrer et activer httpd"
+  ansible.builtin.systemd:
+    name: httpd
+    state: started
+    enabled: true
+
+- name: "install | Démarrer et activer MariaDB"
+  ansible.builtin.systemd:
+    name: mariadb
+    state: started
+    enabled: true
+
+- name: "install | Démarrer et activer certmonger"
+  ansible.builtin.systemd:
+    name: certmonger
+    state: started
+    enabled: true
+
+- name: "install | Télécharger le checksum sha256 de Nextcloud {{ nextcloud_version }}"
+  ansible.builtin.get_url:
+    url: "{{ nextcloud_tarball_url }}.sha256"
+    dest: "/tmp/nextcloud-{{ nextcloud_version }}.tar.bz2.sha256"
+    mode: "0644"
+
+- name: "install | Lire le checksum sha256"
+  ansible.builtin.slurp:
+    src: "/tmp/nextcloud-{{ nextcloud_version }}.tar.bz2.sha256"
+  register: nextcloud_sha256_raw
+
+- name: "install | Télécharger le tarball Nextcloud {{ nextcloud_version }}"
+  ansible.builtin.get_url:
+    url: "{{ nextcloud_tarball_url }}"
+    dest: "/tmp/nextcloud-{{ nextcloud_version }}.tar.bz2"
+    checksum: "sha256:{{ (nextcloud_sha256_raw.content | b64decode).split()[0] }}"
+    mode: "0644"
+
+- name: "install | Extraire le tarball Nextcloud dans /var/www/"
+  ansible.builtin.unarchive:
+    src: "/tmp/nextcloud-{{ nextcloud_version }}.tar.bz2"
+    dest: /var/www/
+    remote_src: true
+    owner: apache
+    group: apache
+    creates: "{{ nextcloud_webroot }}/occ"
+
+- name: "install | Créer le répertoire de données (hors webroot)"
+  ansible.builtin.file:
+    path: "{{ nextcloud_data_dir }}"
+    state: directory
+    owner: apache
+    group: apache
+    mode: "0750"
