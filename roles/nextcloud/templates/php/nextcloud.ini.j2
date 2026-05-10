@@ -1,0 +1,17 @@
+; {{ ansible_managed }}
+; Paramètres PHP requis par Nextcloud 33
+; Déployé dans /etc/php.d/40-nextcloud.ini
+
+memory_limit        = 512M
+upload_max_filesize = 10G
+post_max_size       = 10G
+max_execution_time  = 3600
+max_input_time      = 3600
+
+; OPcache
+opcache.enable                  = 1
+opcache.interned_strings_buffer = 32
+opcache.max_accelerated_files   = 10000
+opcache.memory_consumption      = 128
+opcache.save_comments           = 1
+opcache.revalidate_freq         = 1
