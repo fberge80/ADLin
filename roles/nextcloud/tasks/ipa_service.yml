@@ -10,3 +10,4 @@
     name: "HTTP/{{ nextcloud_hostname }}"
     state: present
   delegate_to: ipa01.adlin.lab
+  no_log: true

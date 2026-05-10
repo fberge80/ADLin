@@ -41,9 +41,6 @@ ipaclient_force_join: false
 # Secrets applicatifs (références vers vault.yml)
 # Ajoutés au fur et à mesure des déploiements de service
 # -----------------------------------------------------------------------------
-nextcloud_db_password:        "{{ vault_nextcloud_db_password }}"
-nextcloud_admin_password:     "{{ vault_nextcloud_admin_password }}"
-
 sogo_db_password:             "{{ vault_sogo_db_password }}"
 
 ldap_bind_password_nextcloud: "{{ vault_ldap_bind_password_nextcloud }}"

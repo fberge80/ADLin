@@ -31,7 +31,7 @@
       - php-opcache
       - php-bcmath
       - php-gmp
-      - php-imagick
+      - php-pecl-imagick
       - bzip2
       - certmonger
       - mariadb-server

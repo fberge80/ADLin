@@ -9,7 +9,7 @@
   community.mysql.mysql_db:
     name: "{{ nextcloud_db_name }}"
     encoding: utf8mb4
-    collation: utf8mb4_general_ci
+    collation: utf8mb4_unicode_ci
     state: present
     login_unix_socket: /var/lib/mysql/mysql.sock
 
