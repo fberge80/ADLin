@@ -1,0 +1,30 @@
+---
+# roles/nextcloud/tasks/selinux.yml
+#
+# httpd_can_network_connect : connexion LDAP sortante vers ipa01 (ldaps://636)
+# httpd_can_sendmail        : notifications e-mail Nextcloud
+# httpd_sys_rw_content_t   : Apache lit et écrit les fichiers dans /var/nc_data
+
+- name: "selinux | Appliquer le contexte httpd_sys_rw_content_t sur /var/nc_data"
+  community.general.sefcontext:
+    target: "{{ nextcloud_data_dir }}(/.*)?"
+    setype: httpd_sys_rw_content_t
+    state: present
+  register: nextcloud_sefcontext_data
+
+- name: "selinux | Restaurer les contextes SELinux sur /var/nc_data"
+  ansible.builtin.command: "restorecon -Rv {{ nextcloud_data_dir }}"
+  when: nextcloud_sefcontext_data.changed
+  changed_when: true
+
+- name: "selinux | Autoriser httpd à initier des connexions réseau (LDAP vers ipa01)"
+  ansible.posix.seboolean:
+    name: httpd_can_network_connect
+    state: true
+    persistent: true
+
+- name: "selinux | Autoriser httpd à envoyer des e-mails (notifications Nextcloud)"
+  ansible.posix.seboolean:
+    name: httpd_can_sendmail
+    state: true
+    persistent: true
