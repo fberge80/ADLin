@@ -15,7 +15,8 @@
   ansible.builtin.command:
     cmd: php {{ nextcloud_webroot }}/occ app:enable user_ldap
   become_user: apache
-  changed_when: false
+  register: nextcloud_app_enable_result
+  changed_when: "'already enabled' not in nextcloud_app_enable_result.stdout"
 
 - name: "ldap | Vérifier si une config LDAP existe"
   ansible.builtin.command:
