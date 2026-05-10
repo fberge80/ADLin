@@ -1,2 +1,24 @@
 ---
-# Stub — complété dans la Task 10
+- name: "Odoo | Installation dépôt nightly et paquets"
+  ansible.builtin.import_tasks: install.yml
+  tags: [odoo, install]
+
+- name: "Odoo | Base de données PostgreSQL"
+  ansible.builtin.import_tasks: database.yml
+  tags: [odoo, database, postgresql]
+
+- name: "Odoo | Configuration odoo.conf"
+  ansible.builtin.import_tasks: config.yml
+  tags: [odoo, config]
+
+- name: "Odoo | Initialisation base + activation auth_ldap"
+  ansible.builtin.import_tasks: init.yml
+  tags: [odoo, init, ldap]
+
+- name: "Odoo | Contextes SELinux"
+  ansible.builtin.import_tasks: selinux.yml
+  tags: [odoo, selinux]
+
+- name: "Odoo | Règles firewalld"
+  ansible.builtin.import_tasks: firewalld.yml
+  tags: [odoo, firewalld]
