@@ -1,0 +1,62 @@
+---
+# roles/nextcloud/tasks/nextcloud.yml
+#
+# Déploie la config Apache + PHP, puis lance occ maintenance:install.
+# Guard : config.php est créé par occ maintenance:install — présent = déjà installé.
+# Les appels config:system:set (trusted_domains) sont idempotents nativement.
+
+- name: "nextcloud | Déployer la configuration Apache"
+  ansible.builtin.template:
+    src: apache/nextcloud.conf.j2
+    dest: /etc/httpd/conf.d/nextcloud.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Recharger httpd
+
+- name: "nextcloud | Déployer la configuration PHP"
+  ansible.builtin.template:
+    src: php/nextcloud.ini.j2
+    dest: /etc/php.d/40-nextcloud.ini
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Redémarrer httpd
+
+- name: "nextcloud | Vérifier si Nextcloud est déjà installé"
+  ansible.builtin.stat:
+    path: "{{ nextcloud_webroot }}/config/config.php"
+  register: nextcloud_config_php
+
+- name: "nextcloud | Lancer occ maintenance:install"
+  ansible.builtin.command:
+    cmd: >
+      php {{ nextcloud_webroot }}/occ maintenance:install
+      --database=mysql
+      --database-host=localhost
+      --database-name={{ nextcloud_db_name }}
+      --database-user={{ nextcloud_db_user }}
+      --database-pass={{ nextcloud_db_password }}
+      --admin-user={{ nextcloud_admin_user }}
+      --admin-pass={{ nextcloud_admin_password }}
+      --data-dir={{ nextcloud_data_dir }}
+  become_user: apache
+  when: not nextcloud_config_php.stat.exists
+  changed_when: true
+  no_log: true
+
+- name: "nextcloud | Configurer trusted_domain public ({{ nextcloud_fqdn_public }})"
+  ansible.builtin.command:
+    cmd: >
+      php {{ nextcloud_webroot }}/occ config:system:set
+      trusted_domains 0 --value={{ nextcloud_fqdn_public }}
+  become_user: apache
+  changed_when: false
+
+- name: "nextcloud | Configurer trusted_domain interne ({{ nextcloud_hostname }})"
+  ansible.builtin.command:
+    cmd: >
+      php {{ nextcloud_webroot }}/occ config:system:set
+      trusted_domains 1 --value={{ nextcloud_hostname }}
+  become_user: apache
+  changed_when: false
