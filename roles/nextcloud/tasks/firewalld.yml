@@ -1,0 +1,11 @@
+---
+# Seul 443/tcp est ouvert sur cloud01.
+# Le trafic entrant provient exclusivement de proxy01 (réseau interne).
+# Le port 80 n'est pas ouvert : aucun HTTP clair sur cloud01.
+
+- name: "firewalld | Autoriser HTTPS (443/tcp)"
+  ansible.posix.firewalld:
+    service: https
+    permanent: true
+    state: enabled
+    immediate: true
