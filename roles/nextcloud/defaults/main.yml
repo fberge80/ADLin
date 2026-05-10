@@ -1,0 +1,38 @@
+---
+# roles/nextcloud/defaults/main.yml
+
+nextcloud_hostname:    "cloud01.adlin.lab"
+nextcloud_domain:      "adlin.lab"
+nextcloud_fqdn_public: "cloud.adlin.lab"
+nextcloud_version:     "33.0.0"
+nextcloud_tarball_url: "https://download.nextcloud.com/server/releases/nextcloud-{{ nextcloud_version }}.tar.bz2"
+nextcloud_webroot:     "/var/www/nextcloud"
+nextcloud_data_dir:    "/var/nc_data"
+
+# TLS — certmonger via CA FreeIPA (Dogtag)
+nextcloud_cert_path:         "/etc/pki/tls/certs/cloud01.adlin.lab.crt"
+nextcloud_key_path:          "/etc/pki/tls/private/cloud01.adlin.lab.key"
+nextcloud_cert_wait_retries: 30
+nextcloud_cert_wait_delay:   10
+
+# MariaDB
+nextcloud_db_name:     "nextcloud"
+nextcloud_db_user:     "nextcloud"
+nextcloud_db_password: "{{ vault_nextcloud_db_password }}"
+
+# Compte admin Nextcloud (utilisé une seule fois par occ maintenance:install)
+nextcloud_admin_user:     "ncadmin"
+nextcloud_admin_password: "{{ vault_nextcloud_admin_password }}"
+
+# LDAP — svc_nextcloud (indirections définies dans group_vars/all/vars.yml)
+nextcloud_ldap_host:       "{{ freeipa_ldap_uri }}"
+nextcloud_ldap_base_dn:    "{{ freeipa_base_dn }}"
+nextcloud_ldap_bind_dn:    "uid=svc_nextcloud,cn=sysaccounts,cn=etc,{{ freeipa_base_dn }}"
+nextcloud_ldap_bind_pass:  "{{ ldap_bind_password_nextcloud }}"
+nextcloud_ldap_user_filter: >-
+  (&(objectClass=posixAccount)(memberOf=cn=nextcloud_users,cn=groups,cn=accounts,{{ freeipa_base_dn }}))
+# configID attribué par Nextcloud à la première config LDAP créée via occ
+nextcloud_ldap_config_id:  "s0"
+
+# Dépôt Remi PHP 8.3
+nextcloud_remi_repo_url: "https://rpms.remirepo.net/enterprise/remi-release-9.rpm"

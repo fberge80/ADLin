@@ -1,0 +1,10 @@
+---
+- name: Redémarrer httpd
+  ansible.builtin.systemd:
+    name: httpd
+    state: restarted
+
+- name: Recharger httpd
+  ansible.builtin.systemd:
+    name: httpd
+    state: reloaded
