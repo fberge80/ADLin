@@ -1,0 +1,11 @@
+---
+galaxy_info:
+  role_name: odoo
+  author: fred
+  description: "Déploie Odoo 19 CE sur Rocky Linux 9 avec PostgreSQL et auth_ldap FreeIPA"
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Rocky
+      versions:
+        - "9"
+dependencies: []
