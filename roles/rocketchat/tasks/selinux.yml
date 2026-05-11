@@ -1,0 +1,14 @@
+---
+# roles/rocketchat/tasks/selinux.yml
+
+- name: "selinux | Activer container_manage_cgroup (requis par Docker + systemd)"
+  ansible.posix.seboolean:
+    name: container_manage_cgroup
+    state: true
+    persistent: true
+
+- name: "selinux | Vérifier que SELinux reste en mode enforcing"
+  ansible.builtin.command: getenforce
+  register: selinux_mode
+  changed_when: false
+  failed_when: selinux_mode.stdout != "Enforcing"

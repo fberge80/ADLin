@@ -1,0 +1,10 @@
+---
+# roles/rocketchat/tasks/firewalld.yml
+# Port 3000 restreint à l'adresse de proxy01 — pas exposé publiquement
+
+- name: "firewalld | Ouvrir le port Rocket.Chat (3000/tcp) pour proxy01"
+  ansible.posix.firewalld:
+    rich_rule: "rule family='ipv4' source address='10.10.10.11' port port='3000' protocol='tcp' accept"
+    permanent: true
+    state: enabled
+    immediate: true
