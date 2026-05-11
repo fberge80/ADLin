@@ -1,0 +1,29 @@
+---
+# playbooks/07-freepbx.yml
+#
+# Déploie FreePBX 17 + Asterisk 21 sur pbx01 (Debian 12).
+#
+# Prérequis obligatoires :
+#   1. FreeIPA opérationnel (01-freeipa-server.yml exécuté)
+#      — enrollment IPA de pbx01 effectué par ce playbook lui-même
+#   2. Vhost pbx.adlin.lab → pbx01:80 configuré sur proxy01 (02-reverse-proxy.yml)
+#   3. Trunk SIP configuré manuellement post-déploiement (OVH Telecom, Keyyo, etc.)
+#
+# Notes importantes :
+#   - pbx01 cible Debian 12 (Sangoma a abandonné RHEL/Rocky Linux en 2024)
+#   - Ce playbook ne s'appuie PAS sur 00-common.yml (rôle Rocky Linux uniquement)
+#   - SELinux est absent de Debian — contrainte documentée et acceptée
+#   - L'installation dure 30-60 min (async géré dans tasks/install.yml)
+#   - L'authentification SIP reste locale dans FreePBX (pas d'intégration LDAP native)
+#
+# Utilisation :
+#   ansible-playbook playbooks/07-freepbx.yml
+#   make deploy-freepbx
+
+- name: "FreePBX 17 + Asterisk 21 — pbx01 (Debian 12)"
+  hosts: pbx
+  become: true
+  gather_facts: true
+
+  roles:
+    - role: freepbx
