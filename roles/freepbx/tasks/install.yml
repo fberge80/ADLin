@@ -1,0 +1,48 @@
+---
+# roles/freepbx/tasks/install.yml
+#
+# Le script Sangoma installe : PHP, MariaDB, Asterisk 21, FreePBX 17, et tous
+# les modules de base. Il dure 30-60 minutes sur un serveur léger.
+# Idempotence : contrôlée par la présence de {{ freepbx_sentinel }}.
+
+- name: "install | Vérifier si FreePBX est déjà installé (idempotence)"
+  ansible.builtin.stat:
+    path: "{{ freepbx_sentinel }}"
+  register: freepbx_installed
+
+- name: "install | Télécharger le script d'installation Sangoma"
+  ansible.builtin.get_url:
+    url: "{{ freepbx_install_script_url }}"
+    dest: "{{ freepbx_install_script_dest }}"
+    mode: "0755"
+    force: false
+  when: not freepbx_installed.stat.exists
+
+- name: "install | Exécuter le script Sangoma (30-60 min, async)"
+  ansible.builtin.command:
+    cmd: "{{ freepbx_install_script_dest }}"
+  when: not freepbx_installed.stat.exists
+  async: 3600
+  poll: 30
+  register: freepbx_install_job
+
+- name: "install | Attendre la fin de l'installation"
+  ansible.builtin.async_status:
+    jid: "{{ freepbx_install_job.ansible_job_id }}"
+  register: freepbx_install_result
+  until: freepbx_install_result.finished
+  retries: 120
+  delay: 30
+  when: not freepbx_installed.stat.exists
+
+- name: "install | Vérifier que le sentinel existe après installation"
+  ansible.builtin.stat:
+    path: "{{ freepbx_sentinel }}"
+  register: freepbx_sentinel_check
+  failed_when: not freepbx_sentinel_check.stat.exists
+
+- name: "install | Activer le service FreePBX au démarrage"
+  ansible.builtin.service:
+    name: freepbx
+    state: started
+    enabled: true
