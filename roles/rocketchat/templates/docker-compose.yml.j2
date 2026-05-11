@@ -1,0 +1,62 @@
+---
+# Généré par Ansible — ne pas modifier manuellement
+# roles/rocketchat/templates/docker-compose.yml.j2
+services:
+
+  mongodb:
+    image: docker.io/library/mongo:{{ rocketchat_mongo_version }}
+    restart: unless-stopped
+    volumes:
+      - ./data/db:/data/db:Z
+    command: mongod --oplogSize 128 --replSet rs0
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo-init-replica:
+    image: docker.io/library/mongo:{{ rocketchat_mongo_version }}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    command: >
+      mongosh --host mongodb --eval
+      "rs.initiate({_id:'rs0',members:[{_id:0,host:'mongodb:27017'}]})"
+    restart: on-failure
+
+  rocketchat:
+    image: registry.rocket.chat/rocketchat/rocket.chat:{{ rocketchat_version }}
+    restart: unless-stopped
+    volumes:
+      - ./data/uploads:/app/uploads:Z
+    environment:
+      MONGO_URL: "mongodb://mongodb:27017/rocketchat?replicaSet=rs0"
+      MONGO_OPLOG_URL: "mongodb://mongodb:27017/local?replicaSet=rs0"
+      ROOT_URL: "https://{{ rocketchat_fqdn_public }}"
+      PORT: "{{ rocketchat_port }}"
+      ADMIN_USERNAME: "{{ rocketchat_admin_user }}"
+      ADMIN_PASS: "{{ rocketchat_admin_password }}"
+      ADMIN_EMAIL: "{{ rocketchat_admin_email }}"
+      OVERWRITE_SETTING_LDAP_Enable: "true"
+      OVERWRITE_SETTING_LDAP_Host: "{{ rocketchat_ldap_host }}"
+      OVERWRITE_SETTING_LDAP_Port: "{{ rocketchat_ldap_port }}"
+      OVERWRITE_SETTING_LDAP_Encryption: "ssl"
+      OVERWRITE_SETTING_LDAP_Reject_Unauthorized: "false"
+      OVERWRITE_SETTING_LDAP_Base_DN: "{{ rocketchat_ldap_base_dn }}"
+      OVERWRITE_SETTING_LDAP_Authentication: "true"
+      OVERWRITE_SETTING_LDAP_Authentication_UserDN: "{{ rocketchat_ldap_bind_dn }}"
+      OVERWRITE_SETTING_LDAP_Authentication_Password: "{{ rocketchat_ldap_bind_pass }}"
+      OVERWRITE_SETTING_LDAP_User_Search_Filter: "{{ rocketchat_ldap_filter }}"
+      OVERWRITE_SETTING_LDAP_User_Search_Scope: "sub"
+      OVERWRITE_SETTING_LDAP_Username_Field: "uid"
+      OVERWRITE_SETTING_LDAP_Merge_Existing_Users: "true"
+      OVERWRITE_SETTING_LDAP_Sync_User_Data: "true"
+      OVERWRITE_SETTING_LDAP_User_Data_FieldMap: '{"cn":"name","mail":"email"}'
+      OVERWRITE_SETTING_LDAP_Background_Sync: "true"
+      OVERWRITE_SETTING_LDAP_Background_Sync_Keep_Existant_Users_Updated: "true"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    ports:
+      - "{{ rocketchat_port }}:{{ rocketchat_port }}"
