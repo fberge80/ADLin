@@ -77,11 +77,8 @@ pour une PME de 10 à 200 salariés, avec :
 - **Tooling** — Makefile (cibles `make deploy-*`), playbook `verify.yml`
   (smoke tests SELinux, chrony, Kerberos, nginx, certmonger), Ansible Vault avec
   pattern d'indirection `vars.yml` / `vault.yml`, ansible-lint et yamllint
-
-### 🚧 À livrer
-
-- **Rôle `rocketchat`** — Rocket.Chat 8.x via Docker Compose, sync LDAP/groupes
-- **Rôle `freepbx`** — FreePBX 17 + Asterisk 21 sur Debian 12
+- **Rôle `rocketchat`** — Rocket.Chat 8.x via Docker Compose, sync LDAP/groupes FreeIPA
+- **Rôle `freepbx`** — FreePBX 17 + Asterisk 21 sur Debian 12, enrollment IPA SSH/sudo
 
 ### Périmètre cible
 
@@ -214,8 +211,8 @@ adlin/
 │   ├── mailserver/                    # Postfix + Dovecot + SOGo + Rspamd            ✅
 │   ├── nextcloud/                     # Nextcloud 33, Apache/PHP 8.3, MariaDB, LDAP   ✅
 │   ├── odoo/                          # Odoo 19 CE, PostgreSQL peer auth, auth_ldap   ✅
-│   ├── rocketchat/                    #                                               🚧
-│   └── freepbx/                       #                                               🚧
+│   ├── rocketchat/                    # Rocket.Chat 8.x Docker Compose, LDAP FreeIPA   ✅
+│   └── freepbx/                       # FreePBX 17 + Asterisk 21, enrollment IPA       ✅
 │
 └── .gitignore
 ```
