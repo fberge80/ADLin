@@ -1,0 +1,36 @@
+---
+# roles/freepbx/tasks/prereqs.yml
+
+- name: "prereqs | Mettre à jour le cache apt"
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: "prereqs | Installer les paquets de base"
+  ansible.builtin.apt:
+    name:
+      - curl
+      - wget
+      - gnupg
+      - lsb-release
+      - ca-certificates
+      - ufw
+      - chrony
+      - python3-ldap
+    state: present
+
+- name: "prereqs | Configurer chrony sur ipa01.adlin.lab"
+  ansible.builtin.copy:
+    dest: /etc/chrony/conf.d/adlin.conf
+    content: |
+      server {{ ipa_server }} iburst
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Recharger chrony
+
+- name: "prereqs | Activer et démarrer chrony"
+  ansible.builtin.service:
+    name: chrony
+    state: started
+    enabled: true

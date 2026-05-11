@@ -1,0 +1,34 @@
+---
+# roles/freepbx/tasks/ipa_client.yml
+# Enrollment de pbx01 comme client FreeIPA sur Debian 12.
+# Fournit : SSH centralisé, sudo via hbac IPA, keytab Kerberos.
+# L'authentification SIP FreePBX reste locale (pas d'intégration LDAP native).
+
+- name: "ipa_client | Installer freeipa-client (Debian)"
+  ansible.builtin.apt:
+    name: freeipa-client
+    state: present
+
+- name: "ipa_client | Vérifier si pbx01 est déjà enrollé"
+  ansible.builtin.stat:
+    path: /etc/ipa/default.conf
+  register: ipa_enrolled
+
+- name: "ipa_client | Enroller pbx01 comme client IPA"
+  ansible.builtin.command: >
+    ipa-client-install
+      --domain {{ ipa_domain }}
+      --server {{ ipa_server }}
+      --realm {{ ipa_realm }}
+      --principal admin
+      --password {{ ipa_admin_password }}
+      --mkhomedir
+      --unattended
+  when: not ipa_enrolled.stat.exists
+  no_log: true
+
+- name: "ipa_client | Vérifier le keytab Kerberos"
+  ansible.builtin.command: klist -k /etc/krb5.keytab
+  register: keytab_check
+  changed_when: false
+  failed_when: keytab_check.rc != 0
