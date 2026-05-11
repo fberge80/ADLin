@@ -1,0 +1,19 @@
+---
+# Note : ce rôle cible Debian 12 (pbx01). Le rôle common (Rocky Linux 9) ne
+# s'applique PAS à cette VM. Toutes les préparations système sont dans ce rôle.
+
+- name: "FreePBX | Prérequis système Debian"
+  ansible.builtin.import_tasks: prereqs.yml
+  tags: [freepbx, prereqs]
+
+- name: "FreePBX | Enrollment FreeIPA client (SSH/sudo centralisés)"
+  ansible.builtin.import_tasks: ipa_client.yml
+  tags: [freepbx, ipa]
+
+- name: "FreePBX | Installation FreePBX 17 + Asterisk 21"
+  ansible.builtin.import_tasks: install.yml
+  tags: [freepbx, install]
+
+- name: "FreePBX | Règles pare-feu (ufw)"
+  ansible.builtin.import_tasks: firewall.yml
+  tags: [freepbx, firewall]

@@ -1,0 +1,15 @@
+---
+# roles/freepbx/defaults/main.yml
+
+freepbx_hostname:    "pbx01.adlin.lab"
+freepbx_fqdn_public: "pbx.adlin.lab"
+
+# Script d'installation officiel Sangoma (Debian 12)
+freepbx_install_script_url:  "https://github.com/FreePBX/sng_freepbx_debian_install/raw/master/sng_freepbx_debian_install.sh"
+freepbx_install_script_dest: "/tmp/freepbx_install.sh"
+
+# Sentinel d'idempotence — le script Sangoma crée ce fichier en fin d'installation
+freepbx_sentinel: "/etc/asterisk/asterisk.conf"
+
+# FreeIPA — enrollment SSH/sudo uniquement (SIP reste local)
+# ipa_domain, ipa_server, ipa_realm, ipa_admin_password : définis dans group_vars/all
