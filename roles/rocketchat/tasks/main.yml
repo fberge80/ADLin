@@ -1,0 +1,16 @@
+---
+- name: "Rocket.Chat | Installation Docker CE"
+  ansible.builtin.import_tasks: install.yml
+  tags: [rocketchat, install, docker]
+
+- name: "Rocket.Chat | Déploiement docker-compose + LDAP"
+  ansible.builtin.import_tasks: compose.yml
+  tags: [rocketchat, compose]
+
+- name: "Rocket.Chat | Contextes SELinux"
+  ansible.builtin.import_tasks: selinux.yml
+  tags: [rocketchat, selinux]
+
+- name: "Rocket.Chat | Règles firewalld"
+  ansible.builtin.import_tasks: firewalld.yml
+  tags: [rocketchat, firewalld]

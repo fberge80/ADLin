@@ -1,0 +1,28 @@
+---
+# roles/rocketchat/defaults/main.yml
+
+rocketchat_hostname:    "chat01.adlin.lab"
+rocketchat_fqdn_public: "chat.adlin.lab"
+rocketchat_version:     "8"
+
+# MongoDB — version compatible RC 8.x
+rocketchat_mongo_version: "7.0"
+
+# Répertoire de travail (volumes Docker montés ici)
+rocketchat_data_dir: "/opt/rocketchat"
+
+# Port HTTP interne — TLS terminé par proxy01
+rocketchat_port: 3000
+
+# Admin initial créé au premier démarrage
+rocketchat_admin_user:  "rcadmin"
+rocketchat_admin_email: "rcadmin@adlin.lab"
+# rocketchat_admin_password : défini dans group_vars/all/vars.yml (référence vault)
+
+# LDAP FreeIPA — svc_rocketchat (ldap_bind_password_rocketchat dans group_vars/all)
+rocketchat_ldap_host:      "{{ ipa_server }}"
+rocketchat_ldap_port:      636
+rocketchat_ldap_base_dn:   "{{ freeipa_base_dn }}"
+rocketchat_ldap_bind_dn:   "uid=svc_rocketchat,cn=sysaccounts,cn=etc,{{ freeipa_base_dn }}"
+rocketchat_ldap_bind_pass: "{{ ldap_bind_password_rocketchat }}"
+rocketchat_ldap_filter:    "(memberOf=cn=chat_users,cn=groups,cn=accounts,{{ freeipa_base_dn }})"

@@ -1,0 +1,6 @@
+---
+- name: Redémarrer rocketchat
+  ansible.builtin.command:
+    cmd: docker compose restart rocketchat
+    chdir: "{{ rocketchat_data_dir }}"
+  changed_when: true
