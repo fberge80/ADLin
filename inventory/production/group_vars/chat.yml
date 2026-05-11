@@ -1,0 +1,5 @@
+---
+# inventory/production/group_vars/chat.yml
+# Variables spécifiques au groupe chat (chat01.adlin.lab)
+# Les variables Rocket.Chat sont définies dans roles/rocketchat/defaults/main.yml
+# Surcharger ici uniquement ce qui diffère des defaults du rôle.

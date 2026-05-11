@@ -1,0 +1,6 @@
+---
+# inventory/production/group_vars/pbx.yml
+# Variables spécifiques au groupe pbx (pbx01.adlin.lab — Debian 12)
+# Les variables FreePBX sont définies dans roles/freepbx/defaults/main.yml
+# Surcharger ici uniquement ce qui diffère des defaults du rôle.
+# Note : pbx01 est exclu du groupe rocky_hosts — le rôle common ne s'applique pas.

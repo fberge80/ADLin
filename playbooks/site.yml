@@ -25,16 +25,16 @@
 - import_playbook: 02-reverse-proxy.yml
 
 # -----------------------------------------------------------------------------
-# Phase 3, services de productivité (à décommenter au fur et à mesure)
+# Phase 3, services de productivité
 # -----------------------------------------------------------------------------
 
-# - import_playbook: 03-nextcloud.yml
+- import_playbook: 03-nextcloud.yml
 - import_playbook: 04-mailserver.yml
-# - import_playbook: 06-rocketchat.yml
+# - import_playbook: 06-rocketchat.yml   # rôle à créer (phase suivante)
 
 # -----------------------------------------------------------------------------
-# Phase 4, services métier (à décommenter au fur et à mesure)
+# Phase 4, services métier
 # -----------------------------------------------------------------------------
 
-# - import_playbook: 05-odoo.yml
-# - import_playbook: 07-freepbx.yml
+- import_playbook: 05-odoo.yml
+# - import_playbook: 07-freepbx.yml      # rôle à créer (phase suivante)

@@ -55,3 +55,5 @@ ldap_svc_nextcloud_password:    "{{ vault_ldap_svc_nextcloud_password }}"
 ldap_svc_mail_password:         "{{ vault_ldap_svc_mail_password }}"
 ldap_svc_odoo_password:         "{{ vault_ldap_svc_odoo_password }}"
 ldap_svc_rocketchat_password:   "{{ vault_ldap_svc_rocketchat_password }}"
+
+rocketchat_admin_password:    "{{ vault_rocketchat_admin_password }}"
