@@ -74,9 +74,152 @@
       changed_when: false
       failed_when: "'status: MONITORING' not in cert_status.stdout"
 
-# Sections à ajouter au fur et à mesure :
-#   hosts: nextcloud   -> occ status, login test
-#   hosts: mailservers -> swaks (SMTP), test IMAP
-#   hosts: chat        -> healthcheck Rocket.Chat
-#   hosts: odoo        -> page login HTTP 200
-#   hosts: pbx         -> asterisk -rx "core show version"
+- name: "Vérification, Nextcloud"
+  hosts: nextcloud
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: "verify | Nextcloud — occ status"
+      ansible.builtin.command: >
+        sudo -u apache php /var/www/html/nextcloud/occ status --output=json
+      register: nc_status
+      changed_when: false
+      failed_when: >
+        nc_status.rc != 0 or
+        (nc_status.stdout | from_json).installed is not true
+
+    - name: "verify | Apache en écoute sur 443"
+      ansible.builtin.wait_for:
+        host: "127.0.0.1"
+        port: 443
+        timeout: 10
+      changed_when: false
+
+- name: "Vérification, mailserver"
+  hosts: mailservers
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: "verify | Postfix actif"
+      ansible.builtin.systemd:
+        name: postfix
+        state: started
+      check_mode: true
+      register: postfix_check
+      failed_when: postfix_check.changed
+
+    - name: "verify | Dovecot actif"
+      ansible.builtin.systemd:
+        name: dovecot
+        state: started
+      check_mode: true
+      register: dovecot_check
+      failed_when: dovecot_check.changed
+
+    - name: "verify | SOGo actif"
+      ansible.builtin.systemd:
+        name: sogod
+        state: started
+      check_mode: true
+      register: sogo_check
+      failed_when: sogo_check.changed
+
+    - name: "verify | Rspamd actif"
+      ansible.builtin.systemd:
+        name: rspamd
+        state: started
+      check_mode: true
+      register: rspamd_check
+      failed_when: rspamd_check.changed
+
+    - name: "verify | SMTP port 25 en écoute"
+      ansible.builtin.wait_for:
+        host: "127.0.0.1"
+        port: 25
+        timeout: 10
+      changed_when: false
+
+    - name: "verify | IMAPS port 993 en écoute"
+      ansible.builtin.wait_for:
+        host: "127.0.0.1"
+        port: 993
+        timeout: 10
+      changed_when: false
+
+- name: "Vérification, Odoo"
+  hosts: odoo
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: "verify | Service odoo actif"
+      ansible.builtin.systemd:
+        name: odoo
+        state: started
+      check_mode: true
+      register: odoo_check
+      failed_when: odoo_check.changed
+
+    - name: "verify | Page de login Odoo répond HTTP 200 sur port 8069"
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:8069/web/login"
+        status_code: 200
+        timeout: 30
+      changed_when: false
+
+    - name: "verify | Port longpolling 8072 en écoute"
+      ansible.builtin.wait_for:
+        host: "127.0.0.1"
+        port: 8072
+        timeout: 10
+      changed_when: false
+
+- name: "Vérification, Rocket.Chat"
+  hosts: chat
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: "verify | Stack Docker Compose en cours d'exécution"
+      ansible.builtin.command:
+        cmd: docker compose ps --status running --format json
+        chdir: /opt/rocketchat
+      register: compose_ps
+      changed_when: false
+      failed_when: >
+        compose_ps.rc != 0 or
+        'rocketchat' not in compose_ps.stdout
+
+    - name: "verify | Rocket.Chat répond sur port 3000"
+      ansible.builtin.wait_for:
+        host: "127.0.0.1"
+        port: 3000
+        timeout: 30
+      changed_when: false
+
+- name: "Vérification, FreePBX"
+  hosts: pbx
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: "verify | Asterisk opérationnel"
+      ansible.builtin.command: asterisk -rx "core show version"
+      register: asterisk_version
+      changed_when: false
+      failed_when: asterisk_version.rc != 0
+
+    - name: "verify | FreePBX web admin répond sur port 80"
+      ansible.builtin.wait_for:
+        host: "127.0.0.1"
+        port: 80
+        timeout: 10
+      changed_when: false
+
+    - name: "verify | Keytab Kerberos présent (enrollment IPA)"
+      ansible.builtin.command: klist -k /etc/krb5.keytab
+      register: keytab_pbx
+      changed_when: false
+      failed_when: keytab_pbx.rc != 0
