@@ -1,0 +1,35 @@
+---
+# roles/rocketchat/tasks/install.yml
+
+- name: "install | Ajouter le dépôt Docker CE"
+  ansible.builtin.get_url:
+    url: "https://download.docker.com/linux/centos/docker-ce.repo"
+    dest: /etc/yum.repos.d/docker-ce.repo
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: "install | Installer Docker CE, CLI et plugin Compose"
+  ansible.builtin.dnf:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose-plugin
+      - container-selinux
+    state: present
+
+- name: "install | Activer et démarrer dockerd"
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: true
+
+- name: "install | Créer le répertoire de données"
+  ansible.builtin.file:
+    path: "{{ rocketchat_data_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+    setype: container_file_t

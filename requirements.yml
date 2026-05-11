@@ -4,6 +4,7 @@ collections:
   - name: community.general
   - name: community.mysql
   - name: community.postgresql
+  - name: community.docker
   - name: freeipa.ansible_freeipa
     version: ">=1.9.0"
   - name: nextcloud.admin
