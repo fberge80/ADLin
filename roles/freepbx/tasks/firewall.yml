@@ -1,0 +1,41 @@
+---
+# roles/freepbx/tasks/firewall.yml
+# pbx01 tourne sur Debian 12 — pas de firewalld, utilisation de ufw.
+
+- name: "firewall | Activer ufw"
+  community.general.ufw:
+    state: enabled
+    policy: deny
+
+- name: "firewall | Autoriser SSH (éviter le verrouillage)"
+  community.general.ufw:
+    rule: allow
+    port: "22"
+    proto: tcp
+
+- name: "firewall | Autoriser HTTP FreePBX admin depuis proxy01"
+  community.general.ufw:
+    rule: allow
+    port: "80"
+    proto: tcp
+    src: "10.10.10.11"
+
+- name: "firewall | Autoriser SIP UDP depuis proxy01"
+  community.general.ufw:
+    rule: allow
+    port: "5060"
+    proto: udp
+    src: "10.10.10.11"
+
+- name: "firewall | Autoriser SIP TLS depuis proxy01"
+  community.general.ufw:
+    rule: allow
+    port: "5061"
+    proto: tcp
+    src: "10.10.10.11"
+
+- name: "firewall | Autoriser RTP (flux audio)"
+  community.general.ufw:
+    rule: allow
+    port: "10000:20000"
+    proto: udp
