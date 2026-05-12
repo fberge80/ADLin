@@ -26,9 +26,18 @@
       --unattended
   when: not ipa_enrolled.stat.exists
   no_log: true
+  register: ipa_client_result
+  failed_when: >
+    ipa_client_result.rc != 0 and
+    "already enrolled" not in ipa_client_result.stderr
 
 - name: "ipa_client | Vérifier le keytab Kerberos"
   ansible.builtin.command: klist -k /etc/krb5.keytab
   register: keytab_check
   changed_when: false
   failed_when: keytab_check.rc != 0
+
+- name: "ipa_client | Afficher le succès de l'enrollment"
+  ansible.builtin.debug:
+    msg: "pbx01 a été enrollé avec succès comme client FreeIPA"
+  when: ipa_client_result is succeeded

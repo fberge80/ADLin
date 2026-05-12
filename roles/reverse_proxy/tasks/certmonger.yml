@@ -18,6 +18,13 @@
   register: reverse_proxy_getcert_list
   changed_when: false
 
+- name: "certmonger | Vérifier que reverse_proxy_vhosts est défini"
+  ansible.builtin.assert:
+    that:
+      - reverse_proxy_vhosts is defined
+      - reverse_proxy_vhosts | length > 0
+    fail_msg: "reverse_proxy_vhosts n'est pas défini ou est vide. Veuillez vérifier la configuration."
+
 - name: "certmonger | Construire la liste des SANs (Subject Alternative Names)"
   ansible.builtin.set_fact:
     reverse_proxy_san_args: >-

@@ -17,7 +17,7 @@ LIMIT_OPT := $(if $(LIMIT),--limit $(LIMIT))
 # Vérification que .vault_pass existe avant toute commande qui en a besoin
 VAULT_OPTS := --vault-password-file $(VAULT_FILE)
 
-.PHONY: help check-vault lint ping deploy-common deploy-freeipa deploy-proxy \
+.PHONY: help check-vault check-collections lint ping deploy-common deploy-freeipa deploy-proxy \
         deploy-nextcloud deploy-mail deploy-rocketchat deploy-odoo \
         deploy-freepbx deploy-all verify
 
@@ -25,6 +25,8 @@ help:
 	@echo "Cibles disponibles :"
 	@echo "  make ping                Tester la connectivité Ansible"
 	@echo "  make lint                Lint YAML et ansible-lint"
+	@echo "  make check-collections   Vérifier les collections Ansible requises"
+	@echo "  make install-collections Installer les collections Ansible requises"
 	@echo ""
 	@echo "  make deploy-common       Phase 1a, hardening OS toutes VM"
 	@echo "  make deploy-freeipa      Phase 1b, FreeIPA Server sur ipa01"
@@ -45,6 +47,21 @@ help:
 
 check-vault:
 	@test -f $(VAULT_FILE) || (echo "ERREUR : $(VAULT_FILE) introuvable" && exit 1)
+
+check-collections:
+	@echo "Vérification des collections Ansible requises..."
+	@ansible-galaxy collection list | grep -q "freeipa.ansible_freeipa" || (echo "Collection freeipa.ansible_freeipa manquante" && exit 1)
+	@ansible-galaxy collection list | grep -q "community.postgresql" || (echo "Collection community.postgresql manquante" && exit 1)
+	@ansible-galaxy collection list | grep -q "community.mysql" || (echo "Collection community.mysql manquante" && exit 1)
+	@ansible-galaxy collection list | grep -q "community.docker" || (echo "Collection community.docker manquante" && exit 1)
+	@ansible-galaxy collection list | grep -q "ansible.posix" || (echo "Collection ansible.posix manquante" && exit 1)
+	@ansible-galaxy collection list | grep -q "community.general" || (echo "Collection community.general manquante" && exit 1)
+	@echo "Toutes les collections requises sont installées."
+
+install-collections:
+	@echo "Installation des collections Ansible requises..."
+	@ansible-galaxy collection install -r requirements.yml
+	@echo "Collections installées avec succès."
 
 ping:
 	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) $(PLAYBOOK_DIR)/00-ping.yml $(LIMIT_OPT)

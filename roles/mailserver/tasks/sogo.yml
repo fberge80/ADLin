@@ -1,4 +1,9 @@
 ---
+- name: "sogo | Vérifier que PostgreSQL est installé et en cours d'exécution"
+  ansible.builtin.systemd:
+    name: postgresql
+    state: started
+
 - name: "sogo | Créer la base de données PostgreSQL"
   community.postgresql.postgresql_db:
     name: "{{ mailserver_sogo_db_name }}"

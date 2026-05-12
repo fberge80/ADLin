@@ -24,6 +24,18 @@
   register: common_ipa_dns_check
   changed_when: false
   failed_when: common_ipa_dns_check.stdout == ""
+  vars:
+    ipa_server: "{{ ipa_server }}"
+
+- name: "freeipa_client | Afficher l'adresse IP résolue de FreeIPA"
+  ansible.builtin.debug:
+    msg: "FreeIPA server {{ ipa_server }} resolves to: {{ common_ipa_dns_check.stdout }}"
+  when: common_ipa_dns_check.stdout != ""
+
+- name: "freeipa_client | Erreur de résolution DNS de FreeIPA"
+  ansible.builtin.fail:
+    msg: "Impossible de résoudre {{ ipa_server }}. Vérifiez la configuration DNS et la connectivité réseau."
+  when: common_ipa_dns_check.stdout == ""
 
 - name: "freeipa_client | Enroller la VM comme client FreeIPA"
   ansible.builtin.include_role:

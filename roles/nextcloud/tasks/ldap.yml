@@ -11,12 +11,21 @@
 # retourne 'configID'), on réutilise nextcloud_ldap_config_id (défaut: s0).
 # Les ldap:set-config sont idempotents — sûrs à rejouer.
 
+- name: "ldap | Vérifier que FreeIPA LDAP est accessible"
+  ansible.builtin.wait_for:
+    host: "{{ nextcloud_ldap_host | regex_replace('ldaps://', '') | regex_replace(':.*', '') }}"
+    port: 636
+    timeout: 30
+  delegate_to: localhost
+
 - name: "ldap | Activer l'application user_ldap"
   ansible.builtin.command:
     cmd: php {{ nextcloud_webroot }}/occ app:enable user_ldap
   become_user: apache
   register: nextcloud_app_enable_result
   changed_when: "'already enabled' not in nextcloud_app_enable_result.stdout"
+  retries: 3
+  delay: 10
 
 - name: "ldap | Vérifier si une config LDAP existe"
   ansible.builtin.command:
@@ -56,6 +65,9 @@
   become_user: apache
   changed_when: false
 
+# Note: Le mot de passe LDAP est passé directement en ligne de commande,
+# ce qui peut être visible dans les logs système. Nous utilisons no_log: true
+# pour minimiser cette exposition.
 - name: "ldap | Mot de passe du compte de service"
   ansible.builtin.command:
     cmd: >

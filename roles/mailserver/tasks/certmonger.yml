@@ -32,7 +32,22 @@
   retries: "{{ mailserver_cert_wait_retries }}"
   delay: "{{ mailserver_cert_wait_delay }}"
   changed_when: false
+  failed_when: >
+    mailserver_cert_status.stdout is defined and
+    ("status: CA_UNREACHABLE" in mailserver_cert_status.stdout or
+     "status: NEED_GUIDANCE" in mailserver_cert_status.stdout)
 
 - name: "certmonger | Afficher l'état du certificat"
   ansible.builtin.debug:
     msg: "{{ mailserver_cert_status.stdout_lines }}"
+
+- name: "certmonger | Erreur de délivrance du certificat"
+  ansible.builtin.fail:
+    msg: >
+      Le certificat n'a pas pu être délivré par Dogtag CA.
+      État actuel: {{ mailserver_cert_status.stdout_lines | join(\" \") }}
+      Vérifiez la connectivité avec FreeIPA et les logs dans /var/log/ipaclient/ipaclient-install.log
+  when: >
+    mailserver_cert_status.stdout is defined and
+    ("status: CA_UNREACHABLE" in mailserver_cert_status.stdout or
+     "status: NEED_GUIDANCE" in mailserver_cert_status.stdout)
