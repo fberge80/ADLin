@@ -24,8 +24,6 @@
   register: common_ipa_dns_check
   changed_when: false
   failed_when: common_ipa_dns_check.stdout == ""
-  vars:
-    ipa_server: "{{ ipa_server }}"
 
 - name: "freeipa_client | Afficher l'adresse IP résolue de FreeIPA"
   ansible.builtin.debug:

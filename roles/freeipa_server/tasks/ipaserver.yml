@@ -14,7 +14,7 @@
     name: freeipa.ansible_freeipa.ipaserver
   vars:
     ipaadmin_password: "{{ vault_ipa_admin_password }}"
-    ipadm_password: "{{ vault_ipa_dm_password }}"
+    ipadm_password: "{{ ipa_dm_password }}"
 
 # Vérification post-installation
 - name: "ipaserver | Vérifier que les services IPA sont actifs"

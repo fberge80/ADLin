@@ -30,11 +30,11 @@
 
 - import_playbook: 03-nextcloud.yml
 - import_playbook: 04-mailserver.yml
-- import_playbook: 06-rocketchat.yml
+- import_playbook: 05-rocketchat.yml
 
 # -----------------------------------------------------------------------------
 # Phase 4, services métier
 # -----------------------------------------------------------------------------
 
-- import_playbook: 05-odoo.yml
+- import_playbook: 06-odoo.yml
 - import_playbook: 07-freepbx.yml

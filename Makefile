@@ -87,10 +87,10 @@ deploy-mail: check-vault
 	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) $(PLAYBOOK_DIR)/04-mailserver.yml $(VAULT_OPTS) $(LIMIT_OPT)
 
 deploy-rocketchat: check-vault
-	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) $(PLAYBOOK_DIR)/06-rocketchat.yml $(VAULT_OPTS) $(LIMIT_OPT)
+	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) $(PLAYBOOK_DIR)/05-rocketchat.yml $(VAULT_OPTS) $(LIMIT_OPT)
 
 deploy-odoo: check-vault
-	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) $(PLAYBOOK_DIR)/05-odoo.yml $(VAULT_OPTS) $(LIMIT_OPT)
+	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) $(PLAYBOOK_DIR)/06-odoo.yml $(VAULT_OPTS) $(LIMIT_OPT)
 
 deploy-freepbx: check-vault
 	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) $(PLAYBOOK_DIR)/07-freepbx.yml $(VAULT_OPTS) $(LIMIT_OPT)

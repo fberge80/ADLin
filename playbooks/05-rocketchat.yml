@@ -1,5 +1,5 @@
 ---
-# playbooks/06-rocketchat.yml
+# playbooks/05-rocketchat.yml
 #
 # Déploie Rocket.Chat 8.x sur chat01 via Docker Compose.
 # Config LDAP FreeIPA injectée par variables d'environnement (OVERWRITE_SETTING_).
@@ -15,7 +15,7 @@
 # depuis chat01 ou accepter cette contrainte en environnement lab isolé.
 #
 # Utilisation :
-#   ansible-playbook playbooks/06-rocketchat.yml
+#   ansible-playbook playbooks/05-rocketchat.yml
 #   make deploy-rocketchat
 
 - name: "Rocket.Chat 8.x — chat01"

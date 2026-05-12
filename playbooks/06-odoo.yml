@@ -1,5 +1,5 @@
 ---
-# playbooks/05-odoo.yml
+# playbooks/06-odoo.yml
 #
 # Déploie Odoo 19 CE sur erp01 : RPM nightly + PostgreSQL + auth_ldap.
 #
@@ -14,9 +14,9 @@
 #   Voir docs/superpowers/specs/2026-05-10-odoo-role-design.md pour les valeurs
 #
 # Utilisation :
-#   ansible-playbook playbooks/05-odoo.yml
-#   ansible-playbook playbooks/05-odoo.yml --tags install
-#   ansible-playbook playbooks/05-odoo.yml --tags database
+#   ansible-playbook playbooks/06-odoo.yml
+#   ansible-playbook playbooks/06-odoo.yml --tags install
+#   ansible-playbook playbooks/06-odoo.yml --tags database
 
 - name: "Odoo 19 CE — erp01"
   hosts: odoo

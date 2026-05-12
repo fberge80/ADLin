@@ -4,9 +4,9 @@
 # FreeIPA vérifie le mot de passe via son moteur Kerberos en coulisses —
 # userPassword n'est pas exposé en clair dans l'annuaire.
 
-hosts            = {{ mailserver_ldap_uri | replace('ldaps://', '') | replace('ldap://', '') }}
+hosts            = {{ mailserver_ldap_uri }}
 ldap_version     = 3
-tls              = yes
+tls              = no
 tls_ca_cert_file = /etc/ipa/ca.crt
 
 # Compte de service pour la recherche initiale du DN utilisateur

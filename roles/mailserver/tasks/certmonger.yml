@@ -6,7 +6,14 @@
 #   CN  = mail01.adlin.lab  (nom interne de la VM)
 #   SAN = mail.adlin.lab    (FQDN exposé aux clients via reverse proxy)
 #
-# Utilisé par Postfix (STARTTLS sur 25/587) et Dovecot (IMAPS sur 993).
+# Principal Kerberos : smtp/mail01.adlin.lab@ADLIN.LAB
+# Ce certificat est partagé par Postfix (STARTTLS 25/587) et Dovecot (IMAPS 993).
+# C'est le plus petit dénominateur commun : les deux services ont besoin d'un
+# certificat TLS valide, et certmonger ne demande qu'un seul certificat par
+# chemin de fichier. Le nom du principal (smtp) est arbitraire — seul le chemin
+# du fichier compte pour la distribution aux deux démons.
+#
+# Le module ipa_service.yml crée le principal correspondant dans FreeIPA
 
 - name: "certmonger | Vérifier les certificats déjà suivis"
   ansible.builtin.command: getcert list

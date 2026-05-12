@@ -24,16 +24,6 @@
   when: not freepbx_installed.stat.exists
   async: 3600
   poll: 30
-  register: freepbx_install_job
-
-- name: "install | Attendre la fin de l'installation"
-  ansible.builtin.async_status:
-    jid: "{{ freepbx_install_job.ansible_job_id }}"
-  register: freepbx_install_result
-  until: freepbx_install_result.finished
-  retries: 120
-  delay: 30
-  when: not freepbx_installed.stat.exists
 
 - name: "install | Vérifier que le sentinel existe après installation"
   ansible.builtin.stat:
