@@ -18,11 +18,11 @@ nextcloud_cert_wait_delay:   10
 # MariaDB
 nextcloud_db_name:     "nextcloud"
 nextcloud_db_user:     "nextcloud"
-nextcloud_db_password: "{{ vault_nextcloud_db_password }}"
+nextcloud_db_password: "{{ nextcloud_db_password }}"
 
 # Compte admin Nextcloud (utilisé une seule fois par occ maintenance:install)
 nextcloud_admin_user:     "ncadmin"
-nextcloud_admin_password: "{{ vault_nextcloud_admin_password }}"
+nextcloud_admin_password: "{{ nextcloud_admin_password }}"
 
 # LDAP — svc_nextcloud (indirections définies dans group_vars/all/vars.yml)
 nextcloud_ldap_host:       "{{ freeipa_ldap_uri }}"

@@ -11,7 +11,7 @@
 
 - name: "app_groups | Créer les groupes applicatifs FreeIPA"
   freeipa.ansible_freeipa.ipagroup:
-    ipaadmin_password: "{{ vault_ipa_admin_password }}"
+    ipaadmin_password: "{{ ipa_admin_password }}"
     name: "{{ item.name }}"
     description: "{{ item.description }}"
     # posix: true crée un groupe POSIX avec gidNumber — requis pour les filtres

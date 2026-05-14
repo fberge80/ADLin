@@ -18,7 +18,7 @@ common_packages:
   - firewalld
   - chrony
   - python3-libselinux  # requis par le module ansible.posix.selinux
-  - python3-libsemanage # requis par semanage (contextes SELinux)
+  - python3-libsemanage  # requis par semanage (contextes SELinux)
 
 common_services_disabled:
   - bluetooth

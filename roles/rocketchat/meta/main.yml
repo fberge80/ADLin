@@ -1,11 +1,12 @@
 ---
 galaxy_info:
   role_name: rocketchat
-  author: adlin
+  author: "Frédéric"
   description: "Rocket.Chat 8.x via Docker Compose avec sync LDAP FreeIPA"
-  min_ansible_version: "2.14"
+  license: "MIT"
+  min_ansible_version: "2.15"
   platforms:
-    - name: Rocky
+    - name: EL
       versions:
         - "9"
 dependencies: []

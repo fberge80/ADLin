@@ -33,11 +33,11 @@
       - postfix           # MTA — réception et acheminement du courrier
       - postfix-ldap      # plugin LDAP pour la résolution des boîtes virtuelles
       - dovecot           # serveur IMAP + SASL + LMTP
-      - dovecot-pigeonhole # filtres Sieve + service ManageSieve (4190)
-      - rspamd            # filtre antispam via milter Postfix
-      - redis             # cache Rspamd (bayes, rate limiting)
-      - sogo              # webmail + CalDAV + CardDAV + ActiveSync
-      - postgresql-server # base de données SOGo
+      - dovecot-pigeonhole  # filtres Sieve + service ManageSieve (4190)
+      - rspamd             # filtre antispam via milter Postfix
+      - redis              # cache Rspamd (bayes, rate limiting)
+      - sogo               # webmail + CalDAV + CardDAV + ActiveSync
+      - postgresql-server  # base de données SOGo
       - python3-psycopg2  # requis par community.postgresql
       - nginx             # frontend SOGo (proxy local → sogod:20000)
       - certmonger        # gestion automatique des certificats via FreeIPA CA

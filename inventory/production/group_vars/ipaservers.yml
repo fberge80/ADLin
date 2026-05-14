@@ -1,3 +1,4 @@
+---
 # inventory/production/group_vars/ipaservers.yml
 #
 # Surcharges spécifiques au serveur FreeIPA.
