@@ -183,15 +183,7 @@ adlin/
 │   │   │   ├── all/
 │   │   │   │   ├── vars.yml           # Variables publiques (réfs vault)
 │   │   │   │   └── vault.yml          # Secrets chiffrés AES-256
-│   │   │   ├── ipaservers.yml
-│   │   │   ├── mailservers.yml
-│   │   │   ├── nextcloud.yml
-│   │   │   ├── pbx.yml
-│   │   │   ├── odoo.yml
-│   │   │   └── chat.yml
-│   │   └── host_vars/
-│   │       └── ipa01.example.com.yml
-│   └── staging/                       # Miroir pour tests
+│   │   │   └── ipaservers.yml         # Surcharges FreeIPA (NTP, enrollment)
 │
 ├── playbooks/
 │   ├── site.yml                       # Master — importe tous les playbooks
@@ -200,8 +192,8 @@ adlin/
 │   ├── 02-reverse-proxy.yml
 │   ├── 03-nextcloud.yml
 │   ├── 04-mailserver.yml
-│   ├── 05-odoo.yml
-│   ├── 06-rocketchat.yml
+│   ├── 05-rocketchat.yml
+│   ├── 06-odoo.yml
 │   └── 07-freepbx.yml
 │
 ├── roles/
@@ -253,9 +245,8 @@ echo "votre_mot_de_passe_vault" > .vault_pass
 chmod 600 .vault_pass
 
 # Adapter l'inventaire
-cp inventory/production/group_vars/all/vars.yml.example \
-   inventory/production/group_vars/all/vars.yml
 # Éditer vars.yml : domaine, IPs, paramètres LDAP
+# Le fichier vars.yml existe déjà — ajuster les valeurs à votre environnement
 
 # Chiffrer les secrets
 ansible-vault encrypt inventory/production/group_vars/all/vault.yml
@@ -316,10 +307,10 @@ Utilisateur créé dans FreeIPA
 
 | Service | DN |
 |---|---|
-| Nextcloud | `uid=svc_nextcloud,cn=sysaccounts,cn=etc,dc=example,dc=com` |
-| Mail | `uid=svc_mail,cn=sysaccounts,cn=etc,dc=example,dc=com` |
-| Odoo | `uid=svc_odoo,cn=sysaccounts,cn=etc,dc=example,dc=com` |
-| Rocket.Chat | `uid=svc_rocketchat,cn=sysaccounts,cn=etc,dc=example,dc=com` |
+| Nextcloud | `uid=svc_nextcloud,cn=sysaccounts,cn=etc,dc=adlin,dc=lab` |
+| Mail | `uid=svc_mail,cn=sysaccounts,cn=etc,dc=adlin,dc=lab` |
+| Odoo | `uid=svc_odoo,cn=sysaccounts,cn=etc,dc=adlin,dc=lab` |
+| Rocket.Chat | `uid=svc_rocketchat,cn=sysaccounts,cn=etc,dc=adlin,dc=lab` |
 
 ---
 

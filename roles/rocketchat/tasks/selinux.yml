@@ -9,6 +9,6 @@
 
 - name: "selinux | Vérifier que SELinux reste en mode enforcing"
   ansible.builtin.command: getenforce
-  register: selinux_mode
+  register: rocketchat_selinux_mode
   changed_when: false
   failed_when: selinux_mode.stdout != "Enforcing"

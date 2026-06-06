@@ -7,16 +7,17 @@
 - name: "sogo | Créer la base de données PostgreSQL"
   community.postgresql.postgresql_db:
     name: "{{ mailserver_sogo_db_name }}"
+    owner: "{{ mailserver_sogo_db_user }}"
     state: present
+  become: true
   become_user: postgres
 
-- name: "sogo | Créer l'utilisateur PostgreSQL et lui accorder les droits"
+- name: "sogo | Créer l'utilisateur PostgreSQL"
   community.postgresql.postgresql_user:
     name: "{{ mailserver_sogo_db_user }}"
     password: "{{ mailserver_sogo_db_password }}"
-    db: "{{ mailserver_sogo_db_name }}"
-    priv: "ALL"
     state: present
+  become: true
   become_user: postgres
   no_log: true
 

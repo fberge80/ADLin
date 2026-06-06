@@ -20,6 +20,7 @@
       psql -d {{ odoo_db_name }} -tAc
       "SELECT EXISTS (SELECT 1 FROM information_schema.tables
        WHERE table_schema='public' AND table_name='ir_module_module')"
+  become: true
   become_user: odoo
   register: odoo_db_initialized
   changed_when: false
@@ -32,6 +33,7 @@
       --workers=0
       --stop-after-init
       --config {{ odoo_config_file }}
+  become: true
   become_user: odoo
   when: odoo_db_initialized.stdout | trim != 't'
   changed_when: true
@@ -41,6 +43,7 @@
     cmd: >
       psql -d {{ odoo_db_name }} -tAc
       "SELECT state FROM ir_module_module WHERE name='auth_ldap'"
+  become: true
   become_user: odoo
   register: odoo_auth_ldap_state
   changed_when: false
@@ -53,6 +56,7 @@
       --workers=0
       --stop-after-init
       --config {{ odoo_config_file }}
+  become: true
   become_user: odoo
   when: odoo_auth_ldap_state.stdout | trim != 'installed'
   changed_when: true

@@ -26,8 +26,8 @@
   ansible.builtin.command:
     cmd: docker compose up -d --remove-orphans
     chdir: "{{ rocketchat_data_dir }}"
-  register: compose_up
-  changed_when: "'Started' in compose_up.stdout or 'Created' in compose_up.stdout"
+  register: rocketchat_compose_up
+  changed_when: "'Started' in rocketchat_compose_up.stdout or 'Created' in rocketchat_compose_up.stdout"
 
 - name: "compose | Attendre que Rocket.Chat réponde sur le port {{ rocketchat_port }}"
   ansible.builtin.wait_for:

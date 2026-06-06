@@ -1,5 +1,0 @@
----
-# inventory/production/group_vars/nextcloud.yml
-# Variables spécifiques au groupe nextcloud (cloud01.adlin.lab)
-# Les variables Nextcloud sont définies dans roles/nextcloud/defaults/main.yml
-# Surcharger ici uniquement ce qui diffère des defaults du rôle.

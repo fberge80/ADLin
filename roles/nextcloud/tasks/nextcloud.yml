@@ -40,6 +40,7 @@
       --admin-user={{ nextcloud_admin_user }}
       --admin-pass={{ nextcloud_admin_password }}
       --data-dir={{ nextcloud_data_dir }}
+  become: true
   become_user: apache
   when: not nextcloud_config_php.stat.exists
   changed_when: true
@@ -50,6 +51,7 @@
     cmd: >
       php {{ nextcloud_webroot }}/occ config:system:set
       trusted_domains 0 --value={{ nextcloud_fqdn_public }}
+  become: true
   become_user: apache
   changed_when: false
 
@@ -58,5 +60,6 @@
     cmd: >
       php {{ nextcloud_webroot }}/occ config:system:set
       trusted_domains 1 --value={{ nextcloud_hostname }}
+  become: true
   become_user: apache
   changed_when: false

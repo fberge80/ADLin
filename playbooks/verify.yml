@@ -11,19 +11,19 @@
   gather_facts: false
 
   tasks:
-    - name: "verify | SELinux en mode enforcing"
+    - name: "Verify | SELinux en mode enforcing"
       ansible.builtin.command: getenforce
       register: selinux_mode
       changed_when: false
       failed_when: selinux_mode.stdout != "Enforcing"
 
-    - name: "verify | chronyd actif et synchronisé"
+    - name: "Verify | Chronyd actif et synchronisé"
       ansible.builtin.command: chronyc tracking
       register: chrony_status
       changed_when: false
       failed_when: "'Leap status     : Normal' not in chrony_status.stdout"
 
-    - name: "verify | firewalld actif"
+    - name: "Verify | Firewalld actif"
       ansible.builtin.systemd:
         name: firewalld
         state: started
@@ -31,7 +31,7 @@
       register: firewalld_check
       failed_when: firewalld_check.changed
 
-    - name: "verify | Keytab Kerberos présent (clients IPA uniquement)"
+    - name: "Verify | Keytab Kerberos présent (clients IPA uniquement)"
       ansible.builtin.command: klist -k /etc/krb5.keytab
       register: keytab_check
       changed_when: false
@@ -44,7 +44,7 @@
   gather_facts: false
 
   tasks:
-    - name: "verify | Services IPA actifs (ipactl status)"
+    - name: "Verify | Services IPA actifs (ipactl status)"
       ansible.builtin.command: ipactl status
       register: ipa_status
       changed_when: false
@@ -56,7 +56,7 @@
   gather_facts: false
 
   tasks:
-    - name: "verify | nginx actif"
+    - name: "Verify | Nginx actif"
       ansible.builtin.systemd:
         name: nginx
         state: started
@@ -64,11 +64,11 @@
       register: nginx_check
       failed_when: nginx_check.changed
 
-    - name: "verify | Configuration nginx valide"
+    - name: "Verify | Configuration nginx valide"
       ansible.builtin.command: nginx -t
       changed_when: false
 
-    - name: "verify | Certificat TLS en état MONITORING"
+    - name: "Verify | Certificat TLS en état MONITORING"
       ansible.builtin.command: getcert list -f /etc/pki/tls/certs/proxy01.adlin.lab.crt
       register: cert_status
       changed_when: false
@@ -80,7 +80,7 @@
   gather_facts: false
 
   tasks:
-    - name: "verify | Nextcloud — occ status"
+    - name: "Verify | Nextcloud — occ status"
       ansible.builtin.command: >
         sudo -u apache php /var/www/html/nextcloud/occ status --output=json
       register: nc_status
@@ -89,7 +89,7 @@
         nc_status.rc != 0 or
         (nc_status.stdout | from_json).installed is not true
 
-    - name: "verify | Apache en écoute sur 443"
+    - name: "Verify | Apache en écoute sur 443"
       ansible.builtin.wait_for:
         host: "127.0.0.1"
         port: 443
@@ -102,7 +102,7 @@
   gather_facts: false
 
   tasks:
-    - name: "verify | Postfix actif"
+    - name: "Verify | Postfix actif"
       ansible.builtin.systemd:
         name: postfix
         state: started
@@ -110,7 +110,7 @@
       register: postfix_check
       failed_when: postfix_check.changed
 
-    - name: "verify | Dovecot actif"
+    - name: "Verify | Dovecot actif"
       ansible.builtin.systemd:
         name: dovecot
         state: started
@@ -118,7 +118,7 @@
       register: dovecot_check
       failed_when: dovecot_check.changed
 
-    - name: "verify | SOGo actif"
+    - name: "Verify | SOGo actif"
       ansible.builtin.systemd:
         name: sogod
         state: started
@@ -126,7 +126,7 @@
       register: sogo_check
       failed_when: sogo_check.changed
 
-    - name: "verify | Rspamd actif"
+    - name: "Verify | Rspamd actif"
       ansible.builtin.systemd:
         name: rspamd
         state: started
@@ -134,14 +134,14 @@
       register: rspamd_check
       failed_when: rspamd_check.changed
 
-    - name: "verify | SMTP port 25 en écoute"
+    - name: "Verify | SMTP port 25 en écoute"
       ansible.builtin.wait_for:
         host: "127.0.0.1"
         port: 25
         timeout: 10
       changed_when: false
 
-    - name: "verify | IMAPS port 993 en écoute"
+    - name: "Verify | IMAPS port 993 en écoute"
       ansible.builtin.wait_for:
         host: "127.0.0.1"
         port: 993
@@ -154,7 +154,7 @@
   gather_facts: false
 
   tasks:
-    - name: "verify | Service odoo actif"
+    - name: "Verify | Service odoo actif"
       ansible.builtin.systemd:
         name: odoo
         state: started
@@ -162,14 +162,14 @@
       register: odoo_check
       failed_when: odoo_check.changed
 
-    - name: "verify | Page de login Odoo répond HTTP 200 sur port 8069"
+    - name: "Verify | Page de login Odoo répond HTTP 200 sur port 8069"
       ansible.builtin.uri:
         url: "http://127.0.0.1:8069/web/login"
         status_code: 200
         timeout: 30
       changed_when: false
 
-    - name: "verify | Port longpolling 8072 en écoute"
+    - name: "Verify | Port longpolling 8072 en écoute"
       ansible.builtin.wait_for:
         host: "127.0.0.1"
         port: 8072
@@ -182,7 +182,7 @@
   gather_facts: false
 
   tasks:
-    - name: "verify | Stack Docker Compose en cours d'exécution"
+    - name: "Verify | Stack Docker Compose en cours d'exécution"
       ansible.builtin.command:
         cmd: docker compose ps --status running --format json
         chdir: /opt/rocketchat
@@ -192,7 +192,7 @@
         compose_ps.rc != 0 or
         'rocketchat' not in compose_ps.stdout
 
-    - name: "verify | Rocket.Chat répond sur port 3000"
+    - name: "Verify | Rocket.Chat répond sur port 3000"
       ansible.builtin.wait_for:
         host: "127.0.0.1"
         port: 3000
@@ -205,20 +205,20 @@
   gather_facts: false
 
   tasks:
-    - name: "verify | Asterisk opérationnel"
+    - name: "Verify | Asterisk opérationnel"
       ansible.builtin.command: asterisk -rx "core show version"
       register: asterisk_version
       changed_when: false
       failed_when: asterisk_version.rc != 0
 
-    - name: "verify | FreePBX web admin répond sur port 80"
+    - name: "Verify | FreePBX web admin répond sur port 80"
       ansible.builtin.wait_for:
         host: "127.0.0.1"
         port: 80
         timeout: 10
       changed_when: false
 
-    - name: "verify | Keytab Kerberos présent (enrollment IPA)"
+    - name: "Verify | Keytab Kerberos présent (enrollment IPA)"
       ansible.builtin.command: klist -k /etc/krb5.keytab
       register: keytab_pbx
       changed_when: false

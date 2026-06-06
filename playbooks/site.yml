@@ -15,26 +15,26 @@
 # Phase 1, fondations
 # -----------------------------------------------------------------------------
 
-- import_playbook: 00-common.yml
-- import_playbook: 01-freeipa-server.yml
+- import_playbook: 00-common.yml  # noqa: name[play]
+- import_playbook: 01-freeipa-server.yml  # noqa: name[play]
 
 # -----------------------------------------------------------------------------
 # Phase 2, reverse proxy + TLS
 # -----------------------------------------------------------------------------
 
-- import_playbook: 02-reverse-proxy.yml
+- import_playbook: 02-reverse-proxy.yml  # noqa: name[play]
 
 # -----------------------------------------------------------------------------
 # Phase 3, services de productivité
 # -----------------------------------------------------------------------------
 
-- import_playbook: 03-nextcloud.yml
-- import_playbook: 04-mailserver.yml
-- import_playbook: 05-rocketchat.yml
+- import_playbook: 03-nextcloud.yml  # noqa: name[play]
+- import_playbook: 04-mailserver.yml  # noqa: name[play]
+- import_playbook: 05-rocketchat.yml  # noqa: name[play]
 
 # -----------------------------------------------------------------------------
 # Phase 4, services métier
 # -----------------------------------------------------------------------------
 
-- import_playbook: 06-odoo.yml
-- import_playbook: 07-freepbx.yml
+- import_playbook: 06-odoo.yml  # noqa: name[play]
+- import_playbook: 07-freepbx.yml  # noqa: name[play]

@@ -59,11 +59,6 @@ common_manage_ntp: true
 # -----------------------------------------------------------------------------
 
 common_ipa_enroll: false
-
-ipa_domain: "adlin.lab"
-ipa_realm: "ADLIN.LAB"
-ipa_server: "ipa01.adlin.lab"
-
-ipaclient_mkhomedir: true
-ipaclient_no_nisdomain: true
-ipaclient_force_join: false
+# Note : ipa_domain, ipa_realm, ipa_server, ipaclient_mkhomedir,
+# ipaclient_no_nisdomain, ipaclient_force_join sont définis dans
+# inventory/production/group_vars/all/vars.yml (partagés entre rôles).

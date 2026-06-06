@@ -12,7 +12,7 @@
     state: present
   register: nextcloud_sefcontext_data
 
-- name: "selinux | Restaurer les contextes SELinux sur /var/nc_data"
+- name: "selinux | Restaurer les contextes SELinux sur /var/nc_data"  # noqa: no-handler
   ansible.builtin.command: "restorecon -Rv {{ nextcloud_data_dir }}"
   when: nextcloud_sefcontext_data.changed
   changed_when: true

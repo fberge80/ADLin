@@ -23,6 +23,7 @@
 - name: "ldap | Activer l'application user_ldap"
   ansible.builtin.command:
     cmd: php {{ nextcloud_webroot }}/occ app:enable user_ldap
+  become: true
   become_user: apache
   register: nextcloud_app_enable_result
   changed_when: "'already enabled' not in nextcloud_app_enable_result.stdout"
@@ -32,6 +33,7 @@
 - name: "ldap | Lister les configurations LDAP existantes (JSON)"
   ansible.builtin.command:
     cmd: php {{ nextcloud_webroot }}/occ ldap:show-config --output json
+  become: true
   become_user: apache
   register: nextcloud_ldap_show
   changed_when: false
@@ -43,6 +45,7 @@
 - name: "ldap | Créer une config LDAP vide si nécessaire"
   ansible.builtin.command:
     cmd: php {{ nextcloud_webroot }}/occ ldap:create-empty-config
+  become: true
   become_user: apache
   register: nextcloud_create_config
   when: nextcloud_ldap_configs | length == 0
@@ -51,6 +54,7 @@
 - name: "ldap | Re-lister les configs après création"
   ansible.builtin.command:
     cmd: php {{ nextcloud_webroot }}/occ ldap:show-config --output json
+  become: true
   become_user: apache
   register: nextcloud_ldap_show_after
   changed_when: false
@@ -73,6 +77,7 @@
     cmd: >
       php {{ nextcloud_webroot }}/occ ldap:set-config
       {{ nextcloud_ldap_config_prefix }} ldapHost {{ nextcloud_ldap_host }}
+  become: true
   become_user: apache
   changed_when: false
 
@@ -81,6 +86,7 @@
     cmd: >
       php {{ nextcloud_webroot }}/occ ldap:set-config
       {{ nextcloud_ldap_config_prefix }} ldapPort 636
+  become: true
   become_user: apache
   changed_when: false
 
@@ -89,6 +95,7 @@
     cmd: >
       php {{ nextcloud_webroot }}/occ ldap:set-config
       {{ nextcloud_ldap_config_prefix }} ldapAgentName "{{ nextcloud_ldap_bind_dn }}"
+  become: true
   become_user: apache
   changed_when: false
 
@@ -100,6 +107,7 @@
     cmd: >
       php {{ nextcloud_webroot }}/occ ldap:set-config
       {{ nextcloud_ldap_config_prefix }} ldapAgentPassword "{{ nextcloud_ldap_bind_pass }}"
+  become: true
   become_user: apache
   changed_when: false
   no_log: true
@@ -109,6 +117,7 @@
     cmd: >
       php {{ nextcloud_webroot }}/occ ldap:set-config
       {{ nextcloud_ldap_config_prefix }} ldapBase "{{ nextcloud_ldap_base_dn }}"
+  become: true
   become_user: apache
   changed_when: false
 
@@ -117,6 +126,7 @@
     cmd: >
       php {{ nextcloud_webroot }}/occ ldap:set-config
       {{ nextcloud_ldap_config_prefix }} ldapUserFilter "{{ nextcloud_ldap_user_filter }}"
+  become: true
   become_user: apache
   changed_when: false
 
@@ -125,6 +135,7 @@
     cmd: >
       php {{ nextcloud_webroot }}/occ ldap:set-config
       {{ nextcloud_ldap_config_prefix }} ldapUuidUserAttribute ipaUniqueID
+  become: true
   become_user: apache
   changed_when: false
 
@@ -133,6 +144,7 @@
     cmd: >
       php {{ nextcloud_webroot }}/occ ldap:set-config
       {{ nextcloud_ldap_config_prefix }} ldapLoginFilter "uid=%uid"
+  become: true
   become_user: apache
   changed_when: false
 
@@ -141,5 +153,6 @@
     cmd: >
       php {{ nextcloud_webroot }}/occ ldap:set-config
       {{ nextcloud_ldap_config_prefix }} ldapConfigurationActive 1
+  become: true
   become_user: apache
   changed_when: false

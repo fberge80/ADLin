@@ -6,7 +6,7 @@
 # login_unix_socket : connexion sans mot de passe root (auth socket par défaut).
 
 - name: "database | Créer la base de données nextcloud (utf8mb4)"
-  community.mysql.mysql_db:
+  ansible.mysql.mysql_db:
     name: "{{ nextcloud_db_name }}"
     encoding: utf8mb4
     collation: utf8mb4_unicode_ci
@@ -14,7 +14,7 @@
     login_unix_socket: /var/lib/mysql/mysql.sock
 
 - name: "database | Créer l'utilisateur nextcloud"
-  community.mysql.mysql_user:
+  ansible.mysql.mysql_user:
     name: "{{ nextcloud_db_user }}"
     password: "{{ nextcloud_db_password }}"
     priv: "{{ nextcloud_db_name }}.*:ALL"

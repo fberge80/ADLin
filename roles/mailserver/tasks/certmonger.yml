@@ -52,7 +52,7 @@
   ansible.builtin.fail:
     msg: >
       Le certificat n'a pas pu être délivré par Dogtag CA.
-      État actuel: {{ mailserver_cert_status.stdout_lines | join(\" \") }}
+      État actuel: {{ mailserver_cert_status.stdout_lines | join(' ') }}
       Vérifiez la connectivité avec FreeIPA et les logs dans /var/log/ipaclient/ipaclient-install.log
   when: >
     mailserver_cert_status.stdout is defined and

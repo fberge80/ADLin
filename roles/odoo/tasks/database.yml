@@ -26,6 +26,7 @@
     name: "{{ odoo_db_user }}"
     role_attr_flags: LOGIN
     state: present
+  become: true
   become_user: postgres
 
 - name: "database | Créer la base de données odoo"
@@ -34,4 +35,5 @@
     owner: "{{ odoo_db_user }}"
     encoding: UTF8
     state: present
+  become: true
   become_user: postgres

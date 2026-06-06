@@ -1,0 +1,4 @@
+---
+# .ansible-lint — ignore les faux positifs sur vault chiffré
+exclude_paths:
+  - inventory/production/group_vars/all/vault.yml

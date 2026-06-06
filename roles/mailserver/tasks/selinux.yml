@@ -10,7 +10,7 @@
     state: present
   register: mailserver_sefcontext
 
-- name: "selinux | Restaurer les contextes SELinux sur le répertoire vmail"
+- name: "selinux | Restaurer les contextes SELinux sur le répertoire vmail"  # noqa: no-handler
   ansible.builtin.command: "restorecon -Rv {{ mailserver_mail_dir }}"
   when: mailserver_sefcontext.changed
   changed_when: true
