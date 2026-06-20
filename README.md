@@ -55,8 +55,8 @@ for a small-to-medium business (10–200 employees), featuring:
     nginx frontend (proxy01 → mail01:80 → sogod:20000)
   - certmonger: multi-SAN certificate (`mail01.adlin.lab` + `mail.adlin.lab`)
     via FreeIPA CA, automatic renewal
-- **`nextcloud` role** — Nextcloud 33 on Apache + PHP 8.3 (Remi) with
-  fully automated FreeIPA LDAP authentication via `occ`:
+- **`nextcloud` role** — Nextcloud on Apache + PHP with fully automated FreeIPA LDAP
+    authentication via `occ`:
   - `user_ldap` enabled and configured (server, filter, bind DN) via `occ ldap:set-config`
   - `ipaUniqueID` as UUID attribute — prevents duplicate accounts on LDAP
     reconnections (stable value, unlike `entryUUID` which has commitment issues)
@@ -67,7 +67,7 @@ for a small-to-medium business (10–200 employees), featuring:
   - `AllowEncodedSlashes NoDecode` — required for CalDAV/CardDAV with Apache
   - SELinux enforcing (`httpd_sys_rw_content_t` on `/var/nc_data`), HTTPS
     only (443/tcp)
-- **`odoo` role** — Odoo 19 CE via official nightly RPM with FreeIPA LDAP
+- **`odoo` role** — Odoo Community Edition via official nightly RPM with FreeIPA LDAP
   authentication (module `auth_ldap` enabled automatically via CLI):
   - Local PostgreSQL (peer authentication — no TCP password to leak)
   - Multi-process workers (4 workers + longpolling port 8072)
@@ -75,8 +75,8 @@ for a small-to-medium business (10–200 employees), featuring:
   - Idempotent guards: database init (table `ir_module_module`) + auth_ldap (state)
   - No TLS on erp01 — proxy01 terminates TLS, Odoo listens in HTTP bliss
   - Post-deploy LDAP configuration documented (Settings → Technical → LDAP)
-- **`rocketchat` role** — Rocket.Chat 8.x via Docker Compose, FreeIPA LDAP/group sync
-- **`freepbx` role** — FreePBX 17 + Asterisk 21 on Debian 12, IPA SSH/sudo enrollment
+- **`rocketchat` role** — Rocket.Chat via Docker Compose, FreeIPA LDAP/group sync
+- **`freepbx` role** — FreePBX + Asterisk on Debian, IPA SSH/sudo enrollment
 - **Tooling** — Makefile (`make deploy-*` targets), `verify.yml` playbook
   (smoke tests: SELinux, chrony, Kerberos, nginx, certmonger), Ansible Vault with
   `vars.yml` / `vault.yml` indirection pattern, ansible-lint and yamllint
@@ -98,20 +98,20 @@ for a small-to-medium business (10–200 employees), featuring:
     │ Rocky 9     │               │  Rocky 9    │              │  Rocky 9    │
     │ FreeIPA     │◄──────────────│  Nginx      │◄─────────────│  Nextcloud  │
     │ DNS · PKI   │   LDAPS/636   │  TLS        │   reverse    │  Apache     │
-    │ Kerberos    │               │  certmonger │   proxy      │  PHP 8.3    │
+    │ Kerberos    │               │  certmonger │   proxy      │  PHP        │
     └─────────────┘               └──────┬──────┘              └─────────────┘
            ▲                             │
            │  LDAP/Kerberos              │ reverse proxy
            │  auth (all services)        │
     ┌──────┴──────────────────────────────────────────────────────────┐
-    │                             │              │          │          │
+    │                            |             |          |           |
 ┌───▼─────┐               ┌──────▼──────┐ ┌────▼────┐ ┌───▼────┐ ┌──▼─────┐
 │ mail01  │               │   erp01     │ │ chat01  │ │ pbx01  │ │        │
 │ Rocky 9 │               │   Rocky 9   │ │ Rocky 9 │ │Debian12│ │        │
-│Postfix  │               │   Odoo 19   │ │Rocket.  │ │FreePBX │ │        │
-│Dovecot  │               │   CE        │ │Chat 8.x │ │   17   │ │        │
+│Postfix   │               │   Odoo      │ │Rocket.  │ │FreePBX │ │        │
+│Dovecot  │               │   CE        │ │Chat     │ │        │ │        │
 │SOGo     │               │   PostgreSQL│ │MongoDB  │ │Asterisk│ │        │
-│Rspamd   │               │             │ │(Docker) │ │   21   │ │        │
+│Rspamd   │               │             │ │(Docker) │ │        │ │        │
 └─────────┘               └─────────────┘ └─────────┘ └────────┘ └────────┘
 ```
 
@@ -120,10 +120,10 @@ for a small-to-medium business (10–200 employees), featuring:
 | Deployed service | Replaces |
 |---|---|
 | Postfix + Dovecot + SOGo + Rspamd | Microsoft 365 Outlook / Exchange, Google Workspace Gmail |
-| Nextcloud 33 | Google Drive, OneDrive/SharePoint, Dropbox Business |
-| Odoo 19 Community Edition | HubSpot CRM, Salesforce, Zoho CRM, Sage |
-| Rocket.Chat 8.x | Slack, Microsoft Teams Chat, Google Chat |
-| FreePBX 17 / Asterisk 21 | Zoom Phone, Teams Phone, RingCentral |
+| Nextcloud | Google Drive, OneDrive/SharePoint, Dropbox Business |
+| Odoo Community Edition | HubSpot CRM, Salesforce, Zoho CRM, Sage |
+| Rocket.Chat | Slack, Microsoft Teams Chat, Google Chat |
+| FreePBX / Asterisk | Zoom Phone, Teams Phone, RingCentral |
 | FreeIPA | Active Directory, Azure AD, Okta |
 
 ---
@@ -193,13 +193,13 @@ adlin/
 │
 ├── roles/
 │   ├── common/                        # OS hardening, SELinux, firewalld, IPA client  ✅
-│   ├── freeipa_server/                # FreeIPA Server, DNS, PKI, service accounts    ✅
+│   ├── freeipa_server/                # FreeIPA Server, DNS, PKI, service accounts   ✅
 │   ├── reverse_proxy/                 # Nginx + certmonger/FreeIPA PKI               ✅
-│   ├── mailserver/                    # Postfix + Dovecot + SOGo + Rspamd            ✅
-│   ├── nextcloud/                     # Nextcloud 33, Apache/PHP 8.3, MariaDB, LDAP   ✅
-│   ├── odoo/                          # Odoo 19 CE, PostgreSQL peer auth, auth_ldap   ✅
-│   ├── rocketchat/                    # Rocket.Chat 8.x Docker Compose, FreeIPA LDAP  ✅
-│   └── freepbx/                       # FreePBX 17 + Asterisk 21, IPA enrollment      ✅
+│   ├── mailserver/                    # Postfix + Dovecot + SOGo + Rspamd             ✅
+│   ├── nextcloud/                     # Nextcloud, Apache/PHP, MariaDB, LDAP         ✅
+│   ├── odoo/                          # Odoo CE, PostgreSQL peer auth, auth_ldap     ✅
+│   ├── rocketchat/                    # Rocket.Chat Docker Compose, FreeIPA LDAP     ✅
+│   └── freepbx/                       # FreePBX + Asterisk, IPA enrollment           ✅
 │
 └── .gitignore
 ```
@@ -361,10 +361,10 @@ Our wallet made the choice for us.
 **Why Debian 12 for FreePBX?**
 Sangoma officially dropped Rocky Linux / RHEL support in 2024. This is the
 single exception to the Rocky Linux 9 rule in this project, explicitly
-documented and justified. We didn't choose Debian because we like `apt` better —
+documented and justified. We didn't choose Debian because we like `apt` better,
 we chose it because FreePBX made us. Yes, we're still a bit bitter about it.
 
-**Why Odoo 19 CE instead of SuiteCRM or EspoCRM?**
+**Why Odoo Community Edition instead of SuiteCRM or EspoCRM?**
 Odoo covers both CRM and ERP (invoicing, inventory, HR) with 70+ modules,
 a community of 12M+ users, and a Community edition under LGPL license.
 Alternatives are either too limited functionally or less well maintained.
