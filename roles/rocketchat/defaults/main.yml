@@ -16,7 +16,7 @@ rocketchat_port: 3000
 
 # Admin initial créé au premier démarrage
 rocketchat_admin_user:  "rcadmin"
-rocketchat_admin_email: "{{ rocketchat_admin_email }}"
+rocketchat_admin_email: "admin@adlin.lab"
 # rocketchat_admin_password : défini dans group_vars/all/vars.yml (référence vault)
 
 # LDAP FreeIPA — svc_rocketchat (ldap_bind_password_rocketchat dans group_vars/all)
