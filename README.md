@@ -1,8 +1,8 @@
-# ADLin — Infrastructure PME open-source sur Proxmox VE
+# ADLin — Open-Source SME Infrastructure on Proxmox VE
 
-> Remplacement complet d'une stack Microsoft 365 / Google Workspace / Salesforce
-> par des équivalents open-source auto-hébergés, déployés intégralement via Ansible
-> sur Rocky Linux 9 avec FreeIPA comme socle d'identité centralisé.
+> Full replacement for a Microsoft 365 / Google Workspace / Salesforce stack
+> using open-source self-hosted equivalents, deployed entirely via Ansible
+> on Rocky Linux 9 with FreeIPA as the centralized identity backbone.
 
 ![Ansible](https://img.shields.io/badge/Ansible-EE0000?style=flat-square&logo=ansible&logoColor=white)
 ![Rocky Linux](https://img.shields.io/badge/Rocky_Linux_9-10B981?style=flat-square&logo=rockylinux&logoColor=white)
@@ -12,79 +12,74 @@
 
 ---
 
-## Objectif
+## Mission Statement
 
-Ce projet démontre le déploiement automatisé d'une infrastructure IT complète
-pour une PME de 10 à 200 salariés, avec :
+This project demonstrates the automated deployment of a complete IT infrastructure
+for a small-to-medium business (10–200 employees), featuring:
 
-- **Zéro licence logicielle** — contre $12–50/utilisateur/mois pour une stack
-  Microsoft 365 + Salesforce + Zoom équivalente
-- **SELinux en mode enforcing** sur toutes les VM Rocky Linux 9 — là où la
-  plupart des guides recommandent de le désactiver
-- **FreeIPA comme annuaire central** (LDAP + Kerberos + PKI + DNS) pour tous
-  les services sans exception
-- **Ansible exclusivement** : rôles structurés, idempotents, commentés, secrets
-  chiffrés avec Vault
+- **Zero software licensing costs** — versus $12–50/user/month for a comparable
+  Microsoft 365 + Salesforce + Zoom stack (your wallet will thank you)
+- **SELinux in enforcing mode** on every Rocky Linux 9 VM — while most guides
+  tell you to disable it, this project tells SELinux "you're welcome"
+- **FreeIPA as the single source of truth** (LDAP + Kerberos + PKI + DNS) for
+  every service, no exceptions, no excuses
+- **Ansible, and only Ansible** — structured roles, idempotent tasks, commented
+  code, secrets encrypted with Vault
 
 ---
-## État d'avancement
 
-> Ce dépôt est en construction active. La section ci-dessous précise ce qui
-> est implémenté et fonctionnel à date, et ce qui reste à livrer. L'architecture
-> décrite plus loin représente le périmètre cible final du projet.
+## Status
 
-### ✅ Implémenté et fonctionnel
+> This repository is under active construction. The table below shows what's
+> implemented and working today, versus the final target scope described in the
+> architecture section.
 
-- **Rôle `common`** — hardening Rocky Linux 9 : SELinux enforcing, EPEL/CRB,
-  paquets de base, chrony (client ou serveur NTP), enrollment FreeIPA client,
+### ✅ Implemented and functional
+
+- **`common` role** — Rocky Linux 9 hardening: SELinux enforcing, EPEL/CRB,
+  base packages, chrony (client or NTP server), FreeIPA client enrollment,
   firewalld
-- **Rôle `freeipa_server`** — déploiement FreeIPA Server complet : DNS intégré,
-  PKI Dogtag, KRA (Key Recovery Authority), comptes de service LDAP en
-  `cn=sysaccounts`, groupes applicatifs POSIX, règles firewalld
-- **Rôle `reverse_proxy`** — Nginx avec TLS automatisé via certmonger et la CA
-  FreeIPA : principal de service Kerberos, certificat multi-SAN, SELinux booleans,
-  vhosts templatés (support Odoo longpolling), HSTS et en-têtes de sécurité
-- **Rôle `mailserver`** — stack mail complète avec authentification FreeIPA LDAP :
-  - Postfix : MTA, boîtes virtuelles LDAP, livraison LMTP → Dovecot, submission
-    SASL/STARTTLS (587), filtre antispam via milter Rspamd
-  - Dovecot : IMAPS (993), `auth_bind` FreeIPA (le mot de passe n'est jamais
-    exposé dans l'annuaire), stockage Maildir virtuel, ManageSieve (4190)
-  - Rspamd : filtre antispam milter, cache Redis (bayes, rate limiting)
-  - SOGo : webmail + CalDAV + CardDAV + ActiveSync, base PostgreSQL, frontend
-    nginx local (proxy01 → mail01:80 → sogod:20000)
-  - certmonger : certificat multi-SAN (`mail01.adlin.lab` + `mail.adlin.lab`)
-    via CA FreeIPA, renouvellement automatique
-- **Rôle `nextcloud`** — Nextcloud 33 sur Apache + PHP 8.3 (Remi) avec
-  authentification LDAP FreeIPA entièrement automatisée via `occ` :
-  - `user_ldap` activé et configuré (serveur, filtre, bind DN) via `occ ldap:set-config`
-  - `ipaUniqueID` comme attribut UUID — évite les doublons de comptes lors des
-    reconnexions LDAP (valeur stable contrairement à `entryUUID`)
-  - Accès restreint au groupe FreeIPA `nextcloud_users`
-  - MariaDB locale (utf8mb4_unicode_ci), données hors webroot dans `/var/nc_data`
-  - Certificat TLS double-SAN (`cloud01.adlin.lab` + `cloud.adlin.lab`) via
-    certmonger/Dogtag, renouvellement automatique
-  - `AllowEncodedSlashes NoDecode` — requis pour CalDAV/CardDAV avec Apache
-  - SELinux enforcing (`httpd_sys_rw_content_t` sur `/var/nc_data`), HTTPS
-    uniquement (443/tcp)
-- **Rôle `odoo`** — Odoo 19 CE via RPM nightly officiel avec authentification
-  FreeIPA LDAP (module `auth_ldap` activé automatiquement via CLI) :
-  - PostgreSQL local (peer authentication — pas de mot de passe TCP)
-  - Workers multi-process (4 workers + longpolling port 8072)
-  - `proxy_mode = True` — indispensable derrière nginx (X-Forwarded-Proto → HTTPS)
-  - Guards idempotents : init base (table `ir_module_module`) + auth_ldap (state)
-  - Pas de TLS sur erp01 — proxy01 termine le TLS, Odoo écoute en HTTP
-  - Configuration LDAP post-déploiement documentée (Settings → Technical → LDAP)
-- **Tooling** — Makefile (cibles `make deploy-*`), playbook `verify.yml`
-  (smoke tests SELinux, chrony, Kerberos, nginx, certmonger), Ansible Vault avec
-  pattern d'indirection `vars.yml` / `vault.yml`, ansible-lint et yamllint
-- **Rôle `rocketchat`** — Rocket.Chat 8.x via Docker Compose, sync LDAP/groupes FreeIPA
-- **Rôle `freepbx`** — FreePBX 17 + Asterisk 21 sur Debian 12, enrollment IPA SSH/sudo
-
-### Périmètre cible
-
-L'architecture, le plan de déploiement et le diagramme ci-dessous décrivent le
-périmètre cible final du projet, c'est-à-dire l'objectif vers lequel le dépôt
-converge, et non l'état du code à date.
+- **`freeipa_server` role** — Full FreeIPA Server deployment: integrated DNS,
+  Dogtag PKI, KRA (Key Recovery Authority), LDAP service accounts in
+  `cn=sysaccounts`, POSIX application groups, firewalld rules
+- **`reverse_proxy` role** — Nginx with automated TLS via certmonger and the
+  FreeIPA CA: Kerberos service principal, multi-SAN certificate, SELinux booleans,
+  templated vhosts (Odoo longpolling support), HSTS and security headers
+- **`mailserver` role** — Complete mail stack with FreeIPA LDAP authentication:
+  - Postfix: MTA, LDAP virtual mailboxes, LMTP delivery → Dovecot, submission
+    SASL/STARTTLS (587), antispam filter via Rspamd milter
+  - Dovecot: IMAPS (993), FreeIPA `auth_bind` (your password never touches the
+    directory—magic), virtual Maildir storage, ManageSieve (4190)
+  - Rspamd: milter-based antispam, Redis cache (bayes, rate limiting)
+  - SOGo: webmail + CalDAV + CardDAV + ActiveSync, PostgreSQL backend, local
+    nginx frontend (proxy01 → mail01:80 → sogod:20000)
+  - certmonger: multi-SAN certificate (`mail01.adlin.lab` + `mail.adlin.lab`)
+    via FreeIPA CA, automatic renewal
+- **`nextcloud` role** — Nextcloud 33 on Apache + PHP 8.3 (Remi) with
+  fully automated FreeIPA LDAP authentication via `occ`:
+  - `user_ldap` enabled and configured (server, filter, bind DN) via `occ ldap:set-config`
+  - `ipaUniqueID` as UUID attribute — prevents duplicate accounts on LDAP
+    reconnections (stable value, unlike `entryUUID` which has commitment issues)
+  - Access restricted to FreeIPA `nextcloud_users` group
+  - Local MariaDB (utf8mb4_unicode_ci), data outside webroot in `/var/nc_data`
+  - Dual-SAN TLS certificate (`cloud01.adlin.lab` + `cloud.adlin.lab`) via
+    certmonger/Dogtag, automatic renewal
+  - `AllowEncodedSlashes NoDecode` — required for CalDAV/CardDAV with Apache
+  - SELinux enforcing (`httpd_sys_rw_content_t` on `/var/nc_data`), HTTPS
+    only (443/tcp)
+- **`odoo` role** — Odoo 19 CE via official nightly RPM with FreeIPA LDAP
+  authentication (module `auth_ldap` enabled automatically via CLI):
+  - Local PostgreSQL (peer authentication — no TCP password to leak)
+  - Multi-process workers (4 workers + longpolling port 8072)
+  - `proxy_mode = True` — essential behind nginx (X-Forwarded-Proto → HTTPS)
+  - Idempotent guards: database init (table `ir_module_module`) + auth_ldap (state)
+  - No TLS on erp01 — proxy01 terminates TLS, Odoo listens in HTTP bliss
+  - Post-deploy LDAP configuration documented (Settings → Technical → LDAP)
+- **`rocketchat` role** — Rocket.Chat 8.x via Docker Compose, FreeIPA LDAP/group sync
+- **`freepbx` role** — FreePBX 17 + Asterisk 21 on Debian 12, IPA SSH/sudo enrollment
+- **Tooling** — Makefile (`make deploy-*` targets), `verify.yml` playbook
+  (smoke tests: SELinux, chrony, Kerberos, nginx, certmonger), Ansible Vault with
+  `vars.yml` / `vault.yml` indirection pattern, ansible-lint and yamllint
 
 ---
 
@@ -93,7 +88,7 @@ converge, et non l'état du code à date.
 ```
                         ┌─────────────────────────────────────┐
                         │  ThinkCentre M920q — Proxmox VE      │
-                        │  Intel i9-9900T · 24 Go RAM          │
+                        │  Intel i9-9900T · 24 GB RAM          │
                         └────────────────┬────────────────────┘
                                          │
            ┌─────────────────────────────┼─────────────────────────────┐
@@ -107,7 +102,7 @@ converge, et non l'état du code à date.
     └─────────────┘               └──────┬──────┘              └─────────────┘
            ▲                             │
            │  LDAP/Kerberos              │ reverse proxy
-           │  auth (tous services)       │
+           │  auth (all services)        │
     ┌──────┴──────────────────────────────────────────────────────────┐
     │                             │              │          │          │
 ┌───▼─────┐               ┌──────▼──────┐ ┌────▼────┐ ┌───▼────┐ ┌──▼─────┐
@@ -120,9 +115,9 @@ converge, et non l'état du code à date.
 └─────────┘               └─────────────┘ └─────────┘ └────────┘ └────────┘
 ```
 
-### Ce que chaque service remplace
+### What each service replaces
 
-| Service déployé | Remplace |
+| Deployed service | Replaces |
 |---|---|
 | Postfix + Dovecot + SOGo + Rspamd | Microsoft 365 Outlook / Exchange, Google Workspace Gmail |
 | Nextcloud 33 | Google Drive, OneDrive/SharePoint, Dropbox Business |
@@ -133,40 +128,40 @@ converge, et non l'état du code à date.
 
 ---
 
-## Stack technique
+## Tech Stack
 
-| Couche | Technologie | Notes |
+| Layer | Technology | Notes |
 |---|---|---|
-| Hyperviseur | Proxmox VE | Hôte — non géré par Ansible |
-| OS serveurs | Rocky Linux 9 | RHEL-compatible, SELinux enforcing |
-| OS PBX | Debian 12 | Exception imposée par FreePBX 17 (abandon support RHEL 2024) |
-| Identité (IdM) | FreeIPA (389-DS + Kerberos + Dogtag + BIND9) | Socle de tout le reste |
-| Automatisation | Ansible + collections Galaxy + Vault | Rôles structurés, idempotents |
-| PKI interne | Dogtag CA (intégré FreeIPA) | Certificats services internes |
-| DNS | BIND9 intégré FreeIPA | Résolution interne + zones inverses |
-| Reverse proxy | Nginx + certmonger (CA FreeIPA) | TLS terminaison centrale |
-| Secrets | Ansible Vault (AES-256) | Pattern `vars.yml` / `vault.yml` |
+| Hypervisor | Proxmox VE | Host — not managed by Ansible |
+| Server OS | Rocky Linux 9 | RHEL-compatible, SELinux enforcing |
+| PBX OS | Debian 12 | Exception forced by FreePBX 17 (RHEL support dropped in 2024) |
+| Identity (IdM) | FreeIPA (389-DS + Kerberos + Dogtag + BIND9) | Foundation of everything else |
+| Automation | Ansible + Galaxy collections + Vault | Structured roles, idempotent |
+| Internal PKI | Dogtag CA (FreeIPA-integrated) | Internal service certificates |
+| DNS | BIND9 (FreeIPA-integrated) | Internal resolution + reverse zones |
+| Reverse proxy | Nginx + certmonger (FreeIPA CA) | Central TLS termination |
+| Secrets | Ansible Vault (AES-256) | `vars.yml` / `vault.yml` pattern |
 
 ---
 
-## Dimensionnement
+## Sizing
 
-| VM | OS | vCPUs | RAM | Disque |
+| VM | OS | vCPUs | RAM | Disk |
 |---|---|---|---|---|
-| ipa01 | Rocky Linux 9 | 2 | 4 Go | 20 Go |
-| proxy01 | Rocky Linux 9 | 1 | 512 Mo | 10 Go |
-| cloud01 | Rocky Linux 9 | 2 | 4 Go | 100+ Go |
-| mail01 | Rocky Linux 9 | 2 | 3 Go | 50 Go |
-| erp01 | Rocky Linux 9 | 2 | 4 Go | 50 Go |
-| chat01 | Rocky Linux 9 | 1 | 2 Go | 30 Go |
-| pbx01 | Debian 12 | 1 | 1,5 Go | 20 Go |
-| **Total** | | **11 vCPUs** | **19 Go** | **280 Go** |
+| ipa01 | Rocky Linux 9 | 2 | 4 GB | 20 GB |
+| proxy01 | Rocky Linux 9 | 1 | 512 MB | 10 GB |
+| cloud01 | Rocky Linux 9 | 2 | 4 GB | 100+ GB |
+| mail01 | Rocky Linux 9 | 2 | 3 GB | 50 GB |
+| erp01 | Rocky Linux 9 | 2 | 4 GB | 50 GB |
+| chat01 | Rocky Linux 9 | 1 | 2 GB | 30 GB |
+| pbx01 | Debian 12 | 1 | 1.5 GB | 20 GB |
+| **Total** | | **11 vCPUs** | **19 GB** | **280 GB** |
 
-Marge disponible sur le ThinkCentre M920q : 5 Go RAM, 5 threads CPU.
+Headroom left on the ThinkCentre M920q: 5 GB RAM, 5 CPU threads.
 
 ---
 
-## Structure du dépôt
+## Repository Structure
 
 ```
 adlin/
@@ -174,20 +169,20 @@ adlin/
 ├── LICENSE                            # MIT
 ├── ansible.cfg
 ├── Makefile                           # make deploy-freeipa, make deploy-all
-├── requirements.yml                   # Collections Galaxy (ansible.posix, community.general, community.postgresql, freeipa…)
+├── requirements.yml                   # Galaxy collections (ansible.posix, community.general, community.postgresql, freeipa…)
 │
 ├── inventory/
 │   ├── production/
 │   │   ├── hosts.yml
 │   │   ├── group_vars/
 │   │   │   ├── all/
-│   │   │   │   ├── vars.yml           # Variables publiques (réfs vault)
-│   │   │   │   └── vault.yml          # Secrets chiffrés AES-256
-│   │   │   └── ipaservers.yml         # Surcharges FreeIPA (NTP, enrollment)
+│   │   │   │   ├── vars.yml           # Public variables (vault refs)
+│   │   │   │   └── vault.yml          # Encrypted secrets AES-256
+│   │   │   └── ipaservers.yml         # FreeIPA overrides (NTP, enrollment)
 │
 ├── playbooks/
-│   ├── site.yml                       # Master — importe tous les playbooks
-│   ├── 00-common.yml                  # Hardening OS, chrony, EPEL, IPA client
+│   ├── site.yml                       # Master — imports all playbooks
+│   ├── 00-common.yml                  # OS hardening, chrony, EPEL, IPA client
 │   ├── 01-freeipa-server.yml
 │   ├── 02-reverse-proxy.yml
 │   ├── 03-nextcloud.yml
@@ -197,71 +192,71 @@ adlin/
 │   └── 07-freepbx.yml
 │
 ├── roles/
-│   ├── common/                        # Hardening OS, SELinux, firewalld, IPA client  ✅
-│   ├── freeipa_server/                # FreeIPA Server, DNS, PKI, comptes de service  ✅
+│   ├── common/                        # OS hardening, SELinux, firewalld, IPA client  ✅
+│   ├── freeipa_server/                # FreeIPA Server, DNS, PKI, service accounts    ✅
 │   ├── reverse_proxy/                 # Nginx + certmonger/FreeIPA PKI               ✅
 │   ├── mailserver/                    # Postfix + Dovecot + SOGo + Rspamd            ✅
 │   ├── nextcloud/                     # Nextcloud 33, Apache/PHP 8.3, MariaDB, LDAP   ✅
 │   ├── odoo/                          # Odoo 19 CE, PostgreSQL peer auth, auth_ldap   ✅
-│   ├── rocketchat/                    # Rocket.Chat 8.x Docker Compose, LDAP FreeIPA   ✅
-│   └── freepbx/                       # FreePBX 17 + Asterisk 21, enrollment IPA       ✅
+│   ├── rocketchat/                    # Rocket.Chat 8.x Docker Compose, FreeIPA LDAP  ✅
+│   └── freepbx/                       # FreePBX 17 + Asterisk 21, IPA enrollment      ✅
 │
 └── .gitignore
 ```
 
 ---
 
-## Prérequis
+## Prerequisites
 
-**Poste de contrôle Ansible**
+**Ansible control node**
 
 ```bash
 # Fedora / Rocky Linux
 sudo dnf install ansible-core python3-netaddr
 
-# Collections et rôles Galaxy
+# Galaxy collections and roles
 ansible-galaxy install -r requirements.yml
 ```
 
 **Proxmox VE**
 
-- Version 8.x minimum recommandée
-- Réseau : bridge `vmbr0` configuré, accès SSH depuis le poste Ansible
-- Stockage : LVM-thin ou ZFS (thin provisioning recommandé)
+- Version 8.x minimum recommended
+- Network: bridge `vmbr0` configured, SSH access from the Ansible control node
+- Storage: LVM-thin or ZFS (thin provisioning recommended)
 
 ---
 
-## Déploiement
+## Deployment
 
-### 1. Configuration initiale
+### 1. Initial setup
 
 ```bash
-# Cloner le dépôt
+# Clone the repository
 git clone https://github.com/<username>/adlin.git
 cd adlin
 
-# Créer le fichier de mot de passe vault (ne jamais commiter)
-echo "votre_mot_de_passe_vault" > .vault_pass
+# Create the vault password file (NEVER commit this)
+echo "your_vault_password" > .vault_pass
 chmod 600 .vault_pass
 
-# Adapter l'inventaire
-# Éditer vars.yml : domaine, IPs, paramètres LDAP
-# Le fichier vars.yml existe déjà — ajuster les valeurs à votre environnement
+# Adapt the inventory
+# Edit vars.yml: domain, IPs, LDAP parameters
+# The file already exists — adjust values to your environment
 
-# Chiffrer les secrets
+# Encrypt secrets
 ansible-vault encrypt inventory/production/group_vars/all/vault.yml
 ```
 
-### 2. Déploiement complet (ordre respectant les dépendances)
+### 2. Full deployment (respecting dependency order)
 
 ```bash
-# Infrastructure complète
+# Full infrastructure
 ansible-playbook -i inventory/production playbooks/site.yml \
   --vault-password-file .vault_pass
 
-# Ou service par service
-make deploy-freeipa     # Phase 1 — socle obligatoire
-make deploy-proxy       # Phase 2 — TLS avant tout autre service
+# Or service by service
+make deploy-freeipa     # Phase 1 — mandatory foundation
+make deploy-proxy       # Phase 2 — TLS before any other service
 make deploy-nextcloud   # Phase 3
 make deploy-mail        # Phase 3
 make deploy-rocketchat  # Phase 3
@@ -269,41 +264,42 @@ make deploy-odoo        # Phase 4
 make deploy-freepbx     # Phase 4
 ```
 
-### 3. Vérification post-déploiement
+### 3. Post-deployment verification
 
 ```bash
-# Tester l'authentification FreeIPA sur tous les services
+# Test FreeIPA authentication across all services
 ansible-playbook -i inventory/production playbooks/verify.yml \
   --vault-password-file .vault_pass
 
-# Vérifier SELinux (doit retourner "enforcing" sur toutes les VM Rocky Linux)
+# Verify SELinux (must return "Enforcing" on all Rocky Linux VMs)
 ansible all -i inventory/production -m command -a "getenforce" \
   --vault-password-file .vault_pass
 ```
 
 ---
 
-## Intégration FreeIPA
+## FreeIPA Integration
 
-FreeIPA est le **seul point de vérité** pour l'identité. Chaque service
-dispose d'un compte de service dédié dans `cn=sysaccounts,cn=etc` avec des
-droits en lecture seule sur l'annuaire.
+FreeIPA is the **single source of truth** for identity. Each service has its
+own dedicated service account in `cn=sysaccounts,cn=etc` with read-only access
+to the directory. Think of it as Active Directory without the "please reboot
+three times" ceremony.
 
 ```
-Utilisateur créé dans FreeIPA
+User created in FreeIPA
         │
         ▼
 ┌───────────────────────────────────────────────────────┐
-│  Propagation automatique vers :                        │
-│  · Nextcloud    (user_ldap + ipaUniqueID override)    │
-│  · SOGo         (authentification + CalDAV/CardDAV)   │
-│  · Odoo         (module auth_ldap)                    │
-│  · Rocket.Chat  (sync groupes inclus, édition free)   │
-│  · FreePBX      (client IPA SSH uniquement)           │
+│  Automatic propagation to:                              │
+│  · Nextcloud    (user_ldap + ipaUniqueID override)      │
+│  · SOGo         (authentication + CalDAV/CardDAV)       │
+│  · Odoo         (auth_ldap module)                      │
+│  · Rocket.Chat  (group sync included, free edition)     │
+│  · FreePBX      (IPA client SSH only)                   │
 └───────────────────────────────────────────────────────┘
 ```
 
-**Comptes de service provisionnés automatiquement par Ansible :**
+**Service accounts provisioned automatically by Ansible:**
 
 | Service | DN |
 |---|---|
@@ -314,66 +310,68 @@ Utilisateur créé dans FreeIPA
 
 ---
 
-## Sécurité
+## Security
 
 **SELinux**
 
-Toutes les VM Rocky Linux 9 opèrent en mode `enforcing`. Chaque rôle Ansible
-documente et configure explicitement les booleans et contextes fichiers requis
-— aucun `setenforce 0` n'est utilisé.
+All Rocky Linux 9 VMs run in `enforcing` mode. Every Ansible role explicitly
+documents and configures the required booleans and file contexts — no
+`setenforce 0` was harmed in the making of this project.
 
 ```yaml
-# Exemple extrait de roles/reverse_proxy/tasks/selinux.yml
-- name: "selinux | Activer les booleans requis par nginx reverse proxy"
+# Excerpt from roles/reverse_proxy/tasks/selinux.yml
+- name: "selinux | Enable booleans required by nginx reverse proxy"
   ansible.posix.seboolean:
     name: "{{ item }}"
     state: true
     persistent: true
   loop:
-    - httpd_can_network_connect      # connexions sortantes vers les upstreams
-    - httpd_can_network_connect_db   # accès DB si nginx interroge directement
+    - httpd_can_network_connect      # outbound connections to upstreams
+    - httpd_can_network_connect_db   # DB access if nginx queries directly
 ```
 
 **Firewalld**
 
-Chaque VM expose uniquement les ports strictement nécessaires à son rôle.
-La gestion est centralisée dans `roles/<service>/tasks/firewalld.yml`.
+Each VM exposes only the ports strictly required by its role.
+Configuration is centralized in `roles/<service>/tasks/firewalld.yml`.
 
 **Ansible Vault**
 
-Pattern d'indirection `vars.yml` / `vault.yml` : les variables publiques
-référencent des variables vault (`ldap_password: "{{ vault_ldap_password }}"`).
-Seul `vault.yml` est chiffré. Les deux fichiers sont commités — seul le
-fichier `.vault_pass` est exclu via `.gitignore`.
+`vars.yml` / `vault.yml` indirection pattern: public variables reference vault
+variables (`ldap_password: "{{ vault_ldap_password }}"`). Only `vault.yml` is
+encrypted. Both files are committed — only `.vault_pass` is excluded via
+`.gitignore`.
 
 ---
 
-## Choix architecturaux notables
+## Notable Architectural Choices
 
-**Pourquoi Postfix + Dovecot + SOGo plutôt que Mailcow ?**
-Mailcow est une excellente solution, mais elle repose sur Docker, ce qui impose
-SELinux en mode permissif et introduit des conflits avec firewalld. La stack
-native RPM est la seule option offrant simultanément FreeIPA LDAP/Kerberos natif,
-SELinux enforcing et des packages maintenus par RHEL/EPEL.
+**Why Postfix + Dovecot + SOGo instead of Mailcow?**
+Mailcow is a great solution, but it relies on Docker, which forces SELinux into
+permissive mode and introduces conflicts with firewalld. The native RPM stack
+is the only option that simultaneously offers native FreeIPA LDAP/Kerberos,
+SELinux enforcing, and packages maintained by RHEL/EPEL. Also, it makes you
+feel closer to the metal — and your inner greybeard approves.
 
-**Pourquoi Rocket.Chat plutôt que Mattermost ?**
-La synchronisation LDAP (y compris les groupes) est gratuite dans l'édition
-Community de Rocket.Chat. Chez Mattermost, cette fonctionnalité est réservée
-à l'édition Enterprise payante.
+**Why Rocket.Chat instead of Mattermost?**
+LDAP synchronization (including groups) is free in Rocket.Chat's Community
+edition. In Mattermost, this feature is locked behind the Enterprise paywall.
+Our wallet made the choice for us.
 
-**Pourquoi Debian 12 pour FreePBX ?**
-Sangoma a officiellement abandonné le support Rocky Linux / RHEL en 2024.
-C'est la seule exception à la règle Rocky Linux 9 dans ce projet, documentée
-et justifiée explicitement.
+**Why Debian 12 for FreePBX?**
+Sangoma officially dropped Rocky Linux / RHEL support in 2024. This is the
+single exception to the Rocky Linux 9 rule in this project, explicitly
+documented and justified. We didn't choose Debian because we like `apt` better —
+we chose it because FreePBX made us. Yes, we're still a bit bitter about it.
 
-**Pourquoi Odoo 19 CE plutôt que SuiteCRM ou EspoCRM ?**
-Odoo couvre à la fois le CRM et l'ERP (facturation, inventaire, RH) avec
-70+ modules, une communauté de 12M+ utilisateurs et une édition Community
-sous licence LGPL. Les alternatives sont soit trop limitées fonctionnellement,
-soit moins bien maintenues.
+**Why Odoo 19 CE instead of SuiteCRM or EspoCRM?**
+Odoo covers both CRM and ERP (invoicing, inventory, HR) with 70+ modules,
+a community of 12M+ users, and a Community edition under LGPL license.
+Alternatives are either too limited functionally or less well maintained.
+Plus, "Odoo" is more fun to say.
 
 ---
 
-## Licence
+## License
 
-MIT, voir [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE).
