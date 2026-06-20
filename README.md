@@ -1,4 +1,4 @@
-# ADLin — Open-Source SME Infrastructure on Proxmox VE
+# ADLin — Open-Source SME Infrastructure on Proxmox Virtual Environment
 
 > Full replacement for a Microsoft 365 / Google Workspace / Salesforce stack
 > using open-source self-hosted equivalents, deployed entirely via Ansible
