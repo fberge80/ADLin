@@ -10,7 +10,8 @@
     name: odoo
     description: "Odoo {{ odoo_version }} — dépôt nightly officiel (RPM)"
     baseurl: "{{ odoo_repo_url }}"
-    gpgcheck: false
+    gpgcheck: true
+    gpgkey: https://nightly.odoo.com/odoo.key
     enabled: true
 
 - name: "install | Installer python3-psycopg2 (requis par community.postgresql)"

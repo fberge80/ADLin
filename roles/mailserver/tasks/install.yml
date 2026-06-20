@@ -8,7 +8,8 @@
     name: sogo-gnustep
     description: "SOGo — GNUstep runtime (Rocky Linux 9)"
     baseurl: "{{ mailserver_sogo_gnustep_repo }}"
-    gpgcheck: false
+    gpgcheck: true
+    gpgkey: https://packages.sogo.nu/sogo.key
     enabled: true
 
 - name: "install | Ajouter le dépôt SOGo"
@@ -16,7 +17,8 @@
     name: sogo
     description: "SOGo — webmail CalDAV CardDAV (Rocky Linux 9)"
     baseurl: "{{ mailserver_sogo_repo }}"
-    gpgcheck: false
+    gpgcheck: true
+    gpgkey: https://packages.sogo.nu/sogo.key
     enabled: true
 
 - name: "install | Ajouter le dépôt Rspamd"
@@ -24,7 +26,8 @@
     name: rspamd
     description: "Rspamd — filtre antispam (Rocky Linux 9)"
     baseurl: "{{ mailserver_rspamd_repo }}"
-    gpgcheck: false
+    gpgcheck: true
+    gpgkey: https://rspamd.com/rpm/gpg.key
     enabled: true
 
 - name: "install | Installer les paquets de la stack mail"

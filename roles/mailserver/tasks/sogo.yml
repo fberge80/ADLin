@@ -4,14 +4,6 @@
     name: postgresql
     state: started
 
-- name: "sogo | Créer la base de données PostgreSQL"
-  community.postgresql.postgresql_db:
-    name: "{{ mailserver_sogo_db_name }}"
-    owner: "{{ mailserver_sogo_db_user }}"
-    state: present
-  become: true
-  become_user: postgres
-
 - name: "sogo | Créer l'utilisateur PostgreSQL"
   community.postgresql.postgresql_user:
     name: "{{ mailserver_sogo_db_user }}"
@@ -20,6 +12,14 @@
   become: true
   become_user: postgres
   no_log: true
+
+- name: "sogo | Créer la base de données PostgreSQL"
+  community.postgresql.postgresql_db:
+    name: "{{ mailserver_sogo_db_name }}"
+    owner: "{{ mailserver_sogo_db_user }}"
+    state: present
+  become: true
+  become_user: postgres
 
 - name: "sogo | Déployer la configuration SOGo"
   ansible.builtin.template:
