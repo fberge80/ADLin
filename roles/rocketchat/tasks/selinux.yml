@@ -11,4 +11,4 @@
   ansible.builtin.command: getenforce
   register: rocketchat_selinux_mode
   changed_when: false
-  failed_when: selinux_mode.stdout != "Enforcing"
+  failed_when: rocketchat_selinux_mode.stdout != "Enforcing"
