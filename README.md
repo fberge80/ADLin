@@ -107,7 +107,7 @@ for a small-to-medium business (10–200 employees), featuring:
 ┌───▼────-─┐ ┌──────▼─────┐ ┌────▼───----─┐ ┌───▼───--─┐ ┌──▼─────┐
 │  mail01  │ │  erp01     │ │  chat01     │ │  pbx01   │ │        │
 │  Rocky 9 │ │  Rocky 9   │ │  Rocky 9    │ │  Debian12│ │        │
-│ Postfix   │ │ Odoo CE    │ │ Rocket Chat │ │ FreePBX  │ │        │
+│ Postfix  │ │ Odoo CE    │ │ Rocket Chat │ │ FreePBX  │ │        │
 │ Dovecot  │ | PostgreSQL │ │ MongoDB     │ │ Asterisk │ │        │
 │ SOGo     │ │            │ │ (Docker)    │ │          │ │        │
 │ Rspamd   │ │            │ │             │ │          │ │        │
