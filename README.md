@@ -108,7 +108,7 @@ for a small-to-medium business (10–200 employees), featuring:
 ┌───▼─────┐               ┌──────▼──────┐ ┌────▼────┐ ┌───▼────┐ ┌──▼─────┐
 │ mail01  │               │   erp01     │ │ chat01  │ │ pbx01  │ │        │
 │ Rocky 9 │               │   Rocky 9   │ │ Rocky 9 │ │Debian12│ │        │
-│Postfix   │               │   Odoo      │ │Rocket.  │ │FreePBX │ │        │
+│Postfix  │               │   Odoo      │ │Rocket.  │ │FreePBX │ │        │
 │Dovecot  │               │   CE        │ │Chat     │ │        │ │        │
 │SOGo     │               │   PostgreSQL│ │MongoDB  │ │Asterisk│ │        │
 │Rspamd   │               │             │ │(Docker) │ │        │ │        │
@@ -192,10 +192,10 @@ adlin/
 │   └── 07-freepbx.yml
 │
 ├── roles/
-│   ├── common/                        # OS hardening, SELinux, firewalld, IPA client  ✅
+│   ├── common/                        # OS hardening, SELinux, firewalld, IPA client ✅
 │   ├── freeipa_server/                # FreeIPA Server, DNS, PKI, service accounts   ✅
 │   ├── reverse_proxy/                 # Nginx + certmonger/FreeIPA PKI               ✅
-│   ├── mailserver/                    # Postfix + Dovecot + SOGo + Rspamd             ✅
+│   ├── mailserver/                    # Postfix + Dovecot + SOGo + Rspamd            ✅
 │   ├── nextcloud/                     # Nextcloud, Apache/PHP, MariaDB, LDAP         ✅
 │   ├── odoo/                          # Odoo CE, PostgreSQL peer auth, auth_ldap     ✅
 │   ├── rocketchat/                    # Rocket.Chat Docker Compose, FreeIPA LDAP     ✅
@@ -290,12 +290,12 @@ User created in FreeIPA
         │
         ▼
 ┌───────────────────────────────────────────────────────┐
-│  Automatic propagation to:                              │
-│  · Nextcloud    (user_ldap + ipaUniqueID override)      │
-│  · SOGo         (authentication + CalDAV/CardDAV)       │
-│  · Odoo         (auth_ldap module)                      │
-│  · Rocket.Chat  (group sync included, free edition)     │
-│  · FreePBX      (IPA client SSH only)                   │
+│  Automatic propagation to:                            │
+│  · Nextcloud    (user_ldap + ipaUniqueID override)    │
+│  · SOGo         (authentication + CalDAV/CardDAV)     │
+│  · Odoo         (auth_ldap module)                    │
+│  · Rocket.Chat  (group sync included, free edition)   │
+│  · FreePBX      (IPA client SSH only)                 │
 └───────────────────────────────────────────────────────┘
 ```
 
