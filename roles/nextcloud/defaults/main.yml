@@ -4,7 +4,7 @@
 nextcloud_hostname:    "cloud01.adlin.lab"
 nextcloud_domain:      "adlin.lab"
 nextcloud_fqdn_public: "cloud.adlin.lab"
-nextcloud_version:     "33.0.0"
+nextcloud_version:     "34.0.0"
 nextcloud_tarball_url: "https://download.nextcloud.com/server/releases/nextcloud-{{ nextcloud_version }}.tar.bz2"
 nextcloud_webroot:     "/var/www/nextcloud"
 nextcloud_data_dir:    "/var/nc_data"
