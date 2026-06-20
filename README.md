@@ -134,7 +134,7 @@ for a small-to-medium business (10–200 employees), featuring:
 |---|---|---|
 | Hypervisor | Proxmox VE | Host — not managed by Ansible |
 | Server OS | Rocky Linux 9 | RHEL-compatible, SELinux enforcing |
-| PBX OS | Debian 12 | Exception forced by FreePBX 17 (RHEL support dropped in 2024) |
+| PBX OS | Debian 12 | Exception forced by FreePBX (RHEL support dropped in 2024) |
 | Identity (IdM) | FreeIPA (389-DS + Kerberos + Dogtag + BIND9) | Foundation of everything else |
 | Automation | Ansible + Galaxy collections + Vault | Structured roles, idempotent |
 | Internal PKI | Dogtag CA (FreeIPA-integrated) | Internal service certificates |
