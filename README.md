@@ -87,8 +87,7 @@ for a small-to-medium business (10–200 employees), featuring:
 
 ```
                         ┌─────────────────────────────────────┐
-                        │  ThinkCentre M920q — Proxmox VE     │
-                        │  Intel i9-9900T · 24 GB RAM         │
+                        │     Proxmox Virtual Environment     │
                         └────────────────┬────────────────────┘
                                          │
            ┌─────────────────────────────┼─────────────────────────────┐
@@ -156,8 +155,6 @@ for a small-to-medium business (10–200 employees), featuring:
 | chat01 | Rocky Linux 9 | 1 | 2 GB | 30 GB |
 | pbx01 | Debian 12 | 1 | 1.5 GB | 20 GB |
 | **Total** | | **11 vCPUs** | **19 GB** | **280 GB** |
-
-Headroom left on the ThinkCentre M920q: 5 GB RAM, 5 CPU threads.
 
 ---
 
