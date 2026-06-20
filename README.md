@@ -87,8 +87,8 @@ for a small-to-medium business (10–200 employees), featuring:
 
 ```
                         ┌─────────────────────────────────────┐
-                        │  ThinkCentre M920q — Proxmox VE      │
-                        │  Intel i9-9900T · 24 GB RAM          │
+                        │  ThinkCentre M920q — Proxmox VE     │
+                        │  Intel i9-9900T · 24 GB RAM         │
                         └────────────────┬────────────────────┘
                                          │
            ┌─────────────────────────────┼─────────────────────────────┐
