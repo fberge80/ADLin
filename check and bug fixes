@@ -1,0 +1,597 @@
+[1mdiff --git a/docs/CHANGELOG.md b/docs/CHANGELOG.md[m
+[1mdeleted file mode 100644[m
+[1mindex 1eba811..0000000[m
+[1m--- a/docs/CHANGELOG.md[m
+[1m+++ /dev/null[m
+[36m@@ -1 +0,0 @@[m
+[31m-["Unreleased] - 2026-05-12\n\n### Ajouté\n- Documentation détaillée des améliorations appliquées (docs/IMPROVEMENTS.md)\n- Cible Makefile `check-collections` pour valider les dépendances\n- Cible Makefile `install-collections` pour installer les dépendances\n- Validation DNS dans le rôle common pour l'enrollment FreeIPA\n- Vérification de disponibilité LDAP avant configuration Nextcloud\n- Validation des vhosts dans le rôle reverse_proxy\n- Messages d'erreur détaillés pour les échecs de certificats\n- Gestion d'erreurs améliorée pour l'enrollment FreePBX\n\n### Modifié\n- Amélioration des messages d'erreur dans les tâches FreeIPA client\n- Documentation des risques de sécurité dans les tâches LDAP Nextcloud\n- Structure du Makefile avec nouvelles cibles pour la gestion des collections\n- Ajout de retries et timeouts configurables sur les opérations critiques\n- Ajout de vérifications préalables aux opérations sensibles\n\n### Sécurité\n- Documentation améliorée sur l'exposition des mots de passe dans les commandes\n- Utilisation renforcée de `no_log: true` sur les tâches sensibles\n- Validation des entrées utilisateur dans les tâches critiques\n- Ajout de checks de pré-existence pour éviter les erreurs d'enrollment\n\n### Robustesse\n- Ajout de validations de dépendances système\n- Retry configurables sur les opérations réseau\n- Gestion gracieuse des états intermédiaires des services\n- Vérification d'état détaillée des certificats TLS\n- Timeout appropriés pour les services externes\n\n## Détails des modifications par fichier\n\n### roles/common/tasks/freeipa_client.yml\n- Ajout de vérification DNS avec échec explicite\n- Messages d'information sur la résolution DNS\n- Gestion d'erreur détaillée en cas d'échec de résolution\n\n### roles/reverse_proxy/tasks/certmonger.yml\n- Validation de la configuration des vhosts avant génération des SAN\n- Ajout de vérifications préalables aux opérations de certificats\n- Messages d'erreur clairs si la configuration est manquante ou vide\n\n### roles/nextcloud/tasks/ldap.yml\n- Vérification de disponibilité du service LDAP FreeIPA avant configuration\n- Documentation sur les risques d'exposition des commandes\n- Retry configurables pour les opérations critiques\n\n### roles/mailserver/tasks/sogo.yml\n- Validation de l'état du service PostgreSQL avant création de bases\n- Messages d'erreur explicites pour les services dépendants\n\n### roles/mailserver/tasks/certmonger.yml\n- Ajout de gestion d'erreurs pour les échecs de délivrance de certificats\n- Messages de débogage améliorés\n- Timeout et retry configurables pour l'attente de certificats\n\n### roles/freepbx/tasks/ipa_client.yml\n- Gestion d'erreurs améliorée pour l'enrollment IPA\n- Vérification de pré-existence de l'enrollment\n- Messages de succès explicites\n\n### Makefile\n- Ajout de cibles pour la gestion des collections Ansible\n- Documentation améliorée des options disponibles\n- Validation automatique des dépendances avant déploiement\n\n## Notes de compatibilité\n\nCes modifications sont rétrocompatibles avec les versions précédentes d'ADLin. Elles ajoutent de la robustesse et de la sécurité sans modifier l'interface ni les comportements attendus.\n\nLes nouvelles vérifications peuvent révéler des problèmes préexistants dans les configurations qui étaient auparavant ignorés, ce qui améliore la fiabilité du déploiement."][m
+\ No newline at end of file[m
+[1mdiff --git a/docs/IMPROVEMENTS.md b/docs/IMPROVEMENTS.md[m
+[1mdeleted file mode 100644[m
+[1mindex 1d7aca6..0000000[m
+[1m--- a/docs/IMPROVEMENTS.md[m
+[1m+++ /dev/null[m
+[36m@@ -1,122 +0,0 @@[m
+[31m-# Améliorations appliquées au projet ADLin[m
+[31m-[m
+[31m-Ce document décrit les améliorations apportées au projet ADLin pour renforcer la robustesse, la sécurité et la maintenabilité du déploiement infrastructure.[m
+[31m-[m
+[31m-## 1. Améliorations de gestion d'erreurs[m
+[31m-[m
+[31m-### Common Role (IPA Client Enrollment)[m
+[31m-- Ajout de vérification DNS avec messages d'erreur détaillés[m
+[31m-- Affichage des adresses IP résolues pour le débogage[m
+[31m-- Gestion d'erreurs explicite en cas d'échec de résolution DNS[m
+[31m-[m
+[31m-### Reverse Proxy Role[m
+[31m-- Validation de la configuration des vhosts avant génération des SAN[m
+[31m-- Messages d'erreur clairs si la configuration est manquante ou vide[m
+[31m-[m
+[31m-### Mailserver Role[m
+[31m-- Vérification d'état détaillée du certificat avec gestion d'erreurs[m
+[31m-- Messages d'erreur explicites pour les échecs de délivrance de certificats[m
+[31m-- Timeout et retry configurables pour l'attente de certificats[m
+[31m-[m
+[31m-### Nextcloud Role[m
+[31m-- Vérification de disponibilité du service LDAP FreeIPA avant configuration[m
+[31m-- Retries avec délais configurables pour les opérations critiques[m
+[31m-- Documentation améliorée sur la sécurité des mots de passe[m
+[31m-[m
+[31m-## 2. Sécurité renforcée[m
+[31m-[m
+[31m-### Gestion des mots de passe[m
+[31m-- Documentation améliorée sur les risques d'exposition des commandes[m
+[31m-- Utilisation de `no_log: true` sur toutes les tâches sensibles[m
+[31m-- Recommandations ajoutées pour minimiser l'exposition des secrets[m
+[31m-[m
+[31m-### FreePBX Role[m
+[31m-- Gestion d'erreurs améliorée pour l'enrollment IPA[m
+[31m-- Vérification de pré-existence de l'enrollment[m
+[31m-- Messages de succès explicites[m
+[31m-[m
+[31m-## 3. Validation et vérification[m
+[31m-[m
+[31m-### Collections Ansible[m
+[31m-- Nouvelles cibles Makefile pour vérifier et installer les collections requises[m
+[31m-- Validation automatique des dépendances avant déploiement[m
+[31m-[m
+[31m-### Services système[m
+[31m-- Vérification des services PostgreSQL avant création de bases de données[m
+[31m-- Validation de l'état des services essentiels[m
+[31m-[m
+[31m-## 4. Documentation et usabilité[m
+[31m-[m
+[31m-### Makefile[m
+[31m-- Ajout de cibles pour la gestion des collections[m
+[31m-- Documentation améliorée des options disponibles[m
+[31m-- Messages d'erreur plus informatifs[m
+[31m-[m
+[31m-### Tâches Ansible[m
+[31m-- Ajout de commentaires détaillés sur les opérations critiques[m
+[31m-- Explication des risques et mesures de mitigation[m
+[31m-- Validations préalables aux opérations sensibles[m
+[31m-[m
+[31m-## 5. Corrections appliquées[m
+[31m-[m
+[31m-### FreeIPA Client Enrollment (roles/common/tasks/freeipa_client.yml)[m
+[31m-- Ajout de vérification DNS avec échec explicite[m
+[31m-- Messages d'information sur la résolution DNS[m
+[31m-- Gestion d'erreur détaillée[m
+[31m-[m
+[31m-### Reverse Proxy Certificats (roles/reverse_proxy/tasks/certmonger.yml)[m
+[31m-- Validation de la configuration des vhosts[m
+[31m-- Gestion d'erreurs pour l'échec de délivrance de certificats[m
+[31m-- Messages de débogage améliorés[m
+[31m-[m
+[31m-### Nextcloud LDAP Configuration (roles/nextcloud/tasks/ldap.yml)[m
+[31m-- Vérification de disponibilité du service LDAP[m
+[31m-- Documentation sur les risques d'exposition des commandes[m
+[31m-- Retry configurables pour les opérations critiques[m
+[31m-[m
+[31m-### Mail Server (roles/mailserver/tasks/sogo.yml)[m
+[31m-- Validation de l'état du service PostgreSQL[m
+[31m-- Messages d'erreur explicites[m
+[31m-[m
+[31m-### FreePBX (roles/freepbx/tasks/ipa_client.yml)[m
+[31m-- Gestion d'erreurs améliorée pour l'enrollment[m
+[31m-- Vérification de pré-existence[m
+[31m-- Messages de succès[m
+[31m-[m
+[31m-## 6. Bonnes pratiques mises en œuvre[m
+[31m-[m
+[31m-### Idempotence[m
+[31m-- Toutes les tâches sont conçues pour être idempotentes[m
+[31m-- Vérifications préalables avant exécution d'opérations[m
+[31m-[m
+[31m-### Résilience[m
+[31m-- Retry configurables sur les opérations réseau[m
+[31m-- Timeout appropriés pour les services externes[m
+[31m-- Gestion gracieuse des états intermédiaires[m
+[31m-[m
+[31m-### Sécurité[m
+[31m-- Minimisation de l'exposition des secrets[m
+[31m-- Utilisation de `no_log` sur les tâches sensibles[m
+[31m-- Validation des entrées utilisateur[m
+[31m-[m
+[31m-### Maintenabilité[m
+[31m-- Commentaires détaillés sur les opérations complexes[m
+[31m-- Structure cohérente des fichiers de tâches[m
+[31m-- Messages d'erreur explicites et actionnables[m
+[31m-[m
+[31m-## 7. Recommandations futures[m
+[31m-[m
+[31m-### Tests automatisés[m
+[31m-- Ajout de tests unitaires pour les rôles critiques[m
+[31m-- Validation des configurations générées[m
+[31m-- Tests d'intégration complète[m
+[31m-[m
+[31m-### Monitoring[m
+[31m-- Ajout de checks de santé pour les services déployés[m
+[31m-- Alerting sur les échecs critiques[m
+[31m-- Dashboards de monitoring[m
+[31m-[m
+[31m-### Documentation[m
+[31m-- Guide de dépannage détaillé[m
+[31m-- FAQ sur les erreurs courantes[m
+[31m-- Procédures de mise à jour sécurisées[m
+\ No newline at end of file[m
+[1mdiff --git a/docs/IMPROVEMENTS_SUMMARY.md b/docs/IMPROVEMENTS_SUMMARY.md[m
+[1mdeleted file mode 100644[m
+[1mindex a81e827..0000000[m
+[1m--- a/docs/IMPROVEMENTS_SUMMARY.md[m
+[1m+++ /dev/null[m
+[36m@@ -1,119 +0,0 @@[m
+[31m-# Résumé des améliorations appliquées à ADLin[m
+[31m-[m
+[31m-Ce document résume les améliorations appliquées au projet ADLin pour renforcer sa robustesse, sa sécurité et sa maintenabilité.[m
+[31m-[m
+[31m-## 1. Améliorations de gestion d'erreurs[m
+[31m-[m
+[31m-### Validation DNS dans le rôle common[m
+[31m-- Ajout de vérification DNS avec messages d'erreur détaillés[m
+[31m-- Affichage des adresses IP résolues pour le débogage[m
+[31m-- Gestion d'erreurs explicite en cas d'échec de résolution DNS[m
+[31m-[m
+[31m-### Validation des vhosts dans le rôle reverse_proxy[m
+[31m-- Validation de la configuration des vhosts avant génération des SAN[m
+[31m-- Messages d'erreur clairs si la configuration est manquante ou vide[m
+[31m-[m
+[31m-### Gestion d'erreurs pour les certificats[m
+[31m-- Vérification d'état détaillée du certificat avec gestion d'erreurs[m
+[31m-- Messages d'erreur explicites pour les échecs de délivrance de certificats[m
+[31m-- Timeout et retry configurables pour l'attente de certificats[m
+[31m-[m
+[31m-## 2. Sécurité renforcée[m
+[31m-[m
+[31m-### Gestion des mots de passe[m
+[31m-- Documentation améliorée sur les risques d'exposition des commandes[m
+[31m-- Utilisation de `no_log: true` sur toutes les tâches sensibles[m
+[31m-- Recommandations ajoutées pour minimiser l'exposition des secrets[m
+[31m-[m
+[31m-### FreePBX Role[m
+[31m-- Gestion d'erreurs améliorée pour l'enrollment IPA[m
+[31m-- Vérification de pré-existence de l'enrollment[m
+[31m-- Messages de succès explicites[m
+[31m-[m
+[31m-## 3. Validation et vérification[m
+[31m-[m
+[31m-### Collections Ansible[m
+[31m-- Nouvelles cibles Makefile pour vérifier et installer les collections requises[m
+[31m-- Validation automatique des dépendances avant déploiement[m
+[31m-[m
+[31m-### Services système[m
+[31m-- Vérification des services PostgreSQL avant création de bases de données[m
+[31m-- Validation de l'état des services essentiels[m
+[31m-[m
+[31m-## 4. Documentation et usabilité[m
+[31m-[m
+[31m-### Makefile amélioré[m
+[31m-- Ajout de cibles pour la gestion des collections Ansible[m
+[31m-- Documentation améliorée des options disponibles[m
+[31m-- Messages d'erreur plus informatifs[m
+[31m-[m
+[31m-### Documentation détaillée[m
+[31m-- Création d'un document expliquant toutes les améliorations[m
+[31m-- Documentation des risques et mesures de mitigation[m
+[31m-- Guide des bonnes pratiques appliquées[m
+[31m-[m
+[31m-## 5. Corrections techniques appliquées[m
+[31m-[m
+[31m-### FreeIPA Client Enrollment[m
+[31m-- Ajout de vérification DNS avec échec explicite dans `roles/common/tasks/freeipa_client.yml`[m
+[31m-- Messages d'information sur la résolution DNS[m
+[31m-- Gestion d'erreur détaillée[m
+[31m-[m
+[31m-### Reverse Proxy Certificats[m
+[31m-- Validation de la configuration des vhosts dans `roles/reverse_proxy/tasks/certmonger.yml`[m
+[31m-- Gestion d'erreurs pour l'échec de délivrance de certificats[m
+[31m-- Messages de débogage améliorés[m
+[31m-[m
+[31m-### Nextcloud LDAP Configuration[m
+[31m-- Vérification de disponibilité du service LDAP avant configuration dans `roles/nextcloud/tasks/ldap.yml`[m
+[31m-- Documentation sur les risques d'exposition des commandes[m
+[31m-- Retry configurables pour les opérations critiques[m
+[31m-[m
+[31m-### Mail Server[m
+[31m-- Validation de l'état du service PostgreSQL dans `roles/mailserver/tasks/sogo.yml`[m
+[31m-- Messages d'erreur explicites[m
+[31m-[m
+[31m-### FreePBX[m
+[31m-- Gestion d'erreurs améliorée pour l'enrollment dans `roles/freepbx/tasks/ipa_client.yml`[m
+[31m-- Vérification de pré-existence[m
+[31m-- Messages de succès[m
+[31m-[m
+[31m-## 6. Bonnes pratiques mises en œuvre[m
+[31m-[m
+[31m-### Idempotence[m
+[31m-- Toutes les tâches sont conçues pour être idempotentes[m
+[31m-- Vérifications préalables avant exécution d'opérations[m
+[31m-[m
+[31m-### Résilience[m
+[31m-- Retry configurables sur les opérations réseau[m
+[31m-- Timeout appropriés pour les services externes[m
+[31m-- Gestion gracieuse des états intermédiaires[m
+[31m-[m
+[31m-### Sécurité[m
+[31m-- Minimisation de l'exposition des secrets[m
+[31m-- Utilisation de `no_log` sur les tâches sensibles[m
+[31m-- Validation des entrées utilisateur[m
+[31m-[m
+[31m-### Maintenabilité[m
+[31m-- Commentaires détaillés sur les opérations complexes[m
+[31m-- Structure cohérente des fichiers de tâches[m
+[31m-- Messages d'erreur explicites et actionnables[m
+[31m-[m
+[31m-## 7. Recommandations futures[m
+[31m-[m
+[31m-### Tests automatisés[m
+[31m-- Ajout de tests unitaires pour les rôles critiques[m
+[31m-- Validation des configurations générées[m
+[31m-- Tests d'intégration complète[m
+[31m-[m
+[31m-### Monitoring[m
+[31m-- Ajout de checks de santé pour les services déployés[m
+[31m-- Alerting sur les échecs critiques[m
+[31m-- Dashboards de monitoring[m
+[31m-[m
+[31m-### Documentation[m
+[31m-- Guide de dépannage détaillé[m
+[31m-- FAQ sur les erreurs courantes[m
+[31m-- Procédures de mise à jour sécurisées[m
+[31m-[m
+[31m-Ces améliorations rendent le projet ADLin plus robuste, sécurisé et facile à maintenir, tout en préservant sa compatibilité avec les versions existantes.[m
+\ No newline at end of file[m
+[1mdiff --git a/docs/PLACEHOLDERS.md b/docs/PLACEHOLDERS.md[m
+[1mdeleted file mode 100644[m
+[1mindex 3abf523..0000000[m
+[1m--- a/docs/PLACEHOLDERS.md[m
+[1m+++ /dev/null[m
+[36m@@ -1,54 +0,0 @@[m
+[31m-# Fichiers contenant des placeholders à remplacer avant déploiement[m
+[31m-#[m
+[31m-# Généré par l'audit du 2026-06-06.[m
+[31m-# Remplacer toutes les occurrences de [IP_ADDRESS] et [EMAIL][m
+[31m-# par les valeurs réelles de votre environnement.[m
+[31m-[m
+[31m-## [IP_ADDRESS] — 19 occurrences dans 6 fichiers[m
+[31m-[m
+[31m-### 1. inventory/production/hosts.yml (7 occurrences)[m
+[31m-# Adresses IP de chaque VM dans Proxmox VE :[m
+[31m-ipa01.adlin.lab    → [IP_ADDRESS]  # FreeIPA Server[m
+[31m-proxy01.adlin.lab  → [IP_ADDRESS]  # Reverse proxy Nginx[m
+[31m-mail01.adlin.lab   → [IP_ADDRESS]  # Stack mail[m
+[31m-cloud01.adlin.lab  → [IP_ADDRESS]  # Nextcloud[m
+[31m-erp01.adlin.lab    → [IP_ADDRESS]  # Odoo[m
+[31m-chat01.adlin.lab   → [IP_ADDRESS]  # Rocket.Chat[m
+[31m-pbx01.adlin.lab    → [IP_ADDRESS]  # FreePBX (Debian 12)[m
+[31m-[m
+[31m-### 2. roles/reverse_proxy/defaults/main.yml (5 occurrences)[m
+[31m-# URLs upstream des vhosts — pointer vers l'IP réelle de chaque backend :[m
+[31m-reverse_proxy_vhosts:[m
+[31m-  - name: cloud   → upstream_url: "http://[IP_ADDRESS]"        # cloud01[m
+[31m-  - name: mail    → upstream_url: "http://[IP_ADDRESS]"        # mail01[m
+[31m-  - name: erp     → upstream_url: "http://[IP_ADDRESS]:8069"   # erp01[m
+[31m-                    longpolling_url: "http://[IP_ADDRESS]:8072" # erp01[m
+[31m-  - name: chat    → upstream_url: "http://[IP_ADDRESS]:3000"   # chat01[m
+[31m-  - name: pbx     → upstream_url: "http://[IP_ADDRESS]"        # pbx01[m
+[31m-[m
+[31m-### 3. playbooks/verify.yml (6 occurrences)[m
+[31m-# Tests wait_for — pointer vers l'IP de la VM ciblée :[m
+[31m-Section Nextcloud      → host: "[IP_ADDRESS]"  # cloud01, port 443[m
+[31m-Section mailserver     → host: "[IP_ADDRESS]"  # mail01, port 25[m
+[31m-Section mailserver     → host: "[IP_ADDRESS]"  # mail01, port 993[m
+[31m-Section Odoo           → url: "http://[IP_ADDRESS]:8069/web/login"  # erp01[m
+[31m-Section Odoo           → host: "[IP_ADDRESS]"  # erp01, port 8072[m
+[31m-Section Rocket.Chat    → host: "[IP_ADDRESS]"  # chat01, port 3000[m
+[31m-Section FreePBX        → host: "[IP_ADDRESS]"  # pbx01, port 80[m
+[31m-[m
+[31m-### 4. roles/mailserver/defaults/main.yml (1 occurrence)[m
+[31m-# Bind Rspamd milter :[m
+[31m-mailserver_rspamd_milter_bind: "[IP_ADDRESS]:11332"[m
+[31m-[m
+[31m-### 5. roles/rocketchat/tasks/compose.yml (1 occurrence)[m
+[31m-# Attente que Rocket.Chat réponde :[m
+[31m-host: "[IP_ADDRESS]"  # chat01[m
+[31m-[m
+[31m-### 6. roles/common/defaults/main.yml (1 occurrence)[m
+[31m-# Réseau autorisé pour le serveur NTP (ipa01 uniquement) :[m
+[31m-common_ntp_serve_network: "[IP_ADDRESS]/24"[m
+[31m-[m
+[31m-## [EMAIL] — 1 occurrence[m
+[31m-[m
+[31m-### 7. roles/rocketchat/defaults/main.yml (1 occurrence)[m
+[31m-rocketchat_admin_email: "[EMAIL]"[m
+[1mdiff --git a/inventory/production/group_vars/all/vars.yml b/inventory/production/group_vars/all/vars.yml[m
+[1mindex 6f2c3cb..d08ac22 100644[m
+[1m--- a/inventory/production/group_vars/all/vars.yml[m
+[1m+++ b/inventory/production/group_vars/all/vars.yml[m
+[36m@@ -44,6 +44,36 @@[m [mipaclient_force_join: false[m
+ # Ajoutés au fur et à mesure des déploiements de service[m
+ # -----------------------------------------------------------------------------[m
+ sogo_db_password:             "{{ vault_sogo_db_password }}"[m
+[32m+[m[32mverify_systemd_services:[m
+[32m+[m[32m  ipa01.adlin.lab:[m
+[32m+[m[32m    - chronyd[m
+[32m+[m[32m    - firewalld[m
+[32m+[m[32m  proxy01.adlin.lab:[m
+[32m+[m[32m    - nginx[m
+[32m+[m[32m    - certmonger[m
+[32m+[m[32m    - chronyd[m
+[32m+[m[32m    - firewalld[m
+[32m+[m[32m  mail01.adlin.lab:[m
+[32m+[m[32m    - postfix[m
+[32m+[m[32m    - dovecot[m
+[32m+[m[32m    - sogod[m
+[32m+[m[32m    - rspamd[m
+[32m+[m[32m    - chronyd[m
+[32m+[m[32m    - firewalld[m
+[32m+[m[32m  cloud01.adlin.lab:[m
+[32m+[m[32m    - httpd[m
+[32m+[m[32m    - mariadb[m
+[32m+[m[32m    - chronyd[m
+[32m+[m[32m    - firewalld[m
+[32m+[m[32m  erp01.adlin.lab:[m
+[32m+[m[32m    - odoo[m
+[32m+[m[32m    - postgresql[m
+[32m+[m[32m    - chronyd[m
+[32m+[m[32m    - firewalld[m
+[32m+[m[32m  chat01.adlin.lab:[m
+[32m+[m[32m    - docker[m
+[32m+[m[32m    - chronyd[m
+[32m+[m[32m    - firewalld[m
+ [m
+ ldap_bind_password_nextcloud: "{{ vault_ldap_bind_password_nextcloud }}"[m
+ ldap_bind_password_mail: "{{ vault_ldap_bind_password_mail }}"[m
+[1mdiff --git a/playbooks/verify.yml b/playbooks/verify.yml[m
+[1mindex 18721d1..8b768a2 100644[m
+[1m--- a/playbooks/verify.yml[m
+[1m+++ b/playbooks/verify.yml[m
+[36m@@ -2,8 +2,8 @@[m
+ # playbooks/verify.yml[m
+ #[m
+ # Smoke tests post déploiement.[m
+[31m-# Vérifie l état des fondations communes à toutes les VM Rocky Linux,[m
+[31m-# puis ajoute des tests spécifiques par service au fur et à mesure des phases.[m
+[32m+[m[32m# Les services systemd attendus par VM sont listés dans group_vars/all/vars.yml[m
+[32m+[m[32m# sous la variable verify_services.[m
+ [m
+ - name: "Vérification, fondations OS et FreeIPA client"[m
+   hosts: rocky_hosts[m
+[36m@@ -13,9 +13,9 @@[m
+   tasks:[m
+     - name: "Verify | SELinux en mode enforcing"[m
+       ansible.builtin.command: getenforce[m
+[31m-      register: selinux_mode[m
+[32m+[m[32m      register: verify_selinux_mode[m
+       changed_when: false[m
+[31m-      failed_when: selinux_mode.stdout != "Enforcing"[m
+[32m+[m[32m      failed_when: verify_selinux_mode.stdout != "Enforcing"[m
+ [m
+     - name: "Verify | Chronyd actif et synchronisé"[m
+       ansible.builtin.command: chronyc tracking[m
+[36m@@ -23,13 +23,14 @@[m
+       changed_when: false[m
+       failed_when: "'Leap status     : Normal' not in chrony_status.stdout"[m
+ [m
+[31m-    - name: "Verify | Firewalld actif"[m
+[32m+[m[32m    - name: "Verify | Tous les services systemd attendus sont actifs"[m
+       ansible.builtin.systemd:[m
+[31m-        name: firewalld[m
+[32m+[m[32m        name: "{{ item }}"[m
+         state: started[m
+       check_mode: true[m
+[31m-      register: firewalld_check[m
+[31m-      failed_when: firewalld_check.changed[m
+[32m+[m[32m      register: verify_services_check[m
+[32m+[m[32m      failed_when: verify_services_check.changed[m
+[32m+[m[32m      loop: "{{ verify_systemd_services[inventory_hostname] | default([]) }}"[m
+ [m
+     - name: "Verify | Keytab Kerberos présent (clients IPA uniquement)"[m
+       ansible.builtin.command: klist -k /etc/krb5.keytab[m
+[36m@@ -56,14 +57,6 @@[m
+   gather_facts: false[m
+ [m
+   tasks:[m
+[31m-    - name: "Verify | Nginx actif"[m
+[31m-      ansible.builtin.systemd:[m
+[31m-        name: nginx[m
+[31m-        state: started[m
+[31m-      check_mode: true[m
+[31m-      register: nginx_check[m
+[31m-      failed_when: nginx_check.changed[m
+[31m-[m
+     - name: "Verify | Configuration nginx valide"[m
+       ansible.builtin.command: nginx -t[m
+       changed_when: false[m
+[36m@@ -102,38 +95,6 @@[m
+   gather_facts: false[m
+ [m
+   tasks:[m
+[31m-    - name: "Verify | Postfix actif"[m
+[31m-      ansible.builtin.systemd:[m
+[31m-        name: postfix[m
+[31m-        state: started[m
+[31m-      check_mode: true[m
+[31m-      register: postfix_check[m
+[31m-      failed_when: postfix_check.changed[m
+[31m-[m
+[31m-    - name: "Verify | Dovecot actif"[m
+[31m-      ansible.builtin.systemd:[m
+[31m-        name: dovecot[m
+[31m-        state: started[m
+[31m-      check_mode: true[m
+[31m-      register: dovecot_check[m
+[31m-      failed_when: dovecot_check.changed[m
+[31m-[m
+[31m-    - name: "Verify | SOGo actif"[m
+[31m-      ansible.builtin.systemd:[m
+[31m-        name: sogod[m
+[31m-        state: started[m
+[31m-      check_mode: true[m
+[31m-      register: sogo_check[m
+[31m-      failed_when: sogo_check.changed[m
+[31m-[m
+[31m-    - name: "Verify | Rspamd actif"[m
+[31m-      ansible.builtin.systemd:[m
+[31m-        name: rspamd[m
+[31m-        state: started[m
+[31m-      check_mode: true[m
+[31m-      register: rspamd_check[m
+[31m-      failed_when: rspamd_check.changed[m
+[31m-[m
+     - name: "Verify | SMTP port 25 en écoute"[m
+       ansible.builtin.wait_for:[m
+         host: "127.0.0.1"[m
+[36m@@ -154,14 +115,6 @@[m
+   gather_facts: false[m
+ [m
+   tasks:[m
+[31m-    - name: "Verify | Service odoo actif"[m
+[31m-      ansible.builtin.systemd:[m
+[31m-        name: odoo[m
+[31m-        state: started[m
+[31m-      check_mode: true[m
+[31m-      register: odoo_check[m
+[31m-      failed_when: odoo_check.changed[m
+[31m-[m
+     - name: "Verify | Page de login Odoo répond HTTP 200 sur port 8069"[m
+       ansible.builtin.uri:[m
+         url: "http://127.0.0.1:8069/web/login"[m
+[1mdiff --git a/roles/common/tasks/main.yml b/roles/common/tasks/main.yml[m
+[1mindex 9ea7994..07eddea 100644[m
+[1m--- a/roles/common/tasks/main.yml[m
+[1m+++ b/roles/common/tasks/main.yml[m
+[36m@@ -13,6 +13,10 @@[m
+   when: common_manage_ntp | bool[m
+   # Désactivé sur ipaservers : FreeIPA server installer gère chrony lui-même[m
+ [m
+[32m+[m[32m- name: "Common | Firewalld"[m
+[32m+[m[32m  ansible.builtin.import_tasks: firewalld.yml[m
+[32m+[m[32m  tags: [common, firewalld][m
+[32m+[m
+ - name: "Common | Enrollment FreeIPA client"[m
+   ansible.builtin.import_tasks: freeipa_client.yml[m
+   tags: [common, freeipa, ipa][m
+[1mdiff --git a/roles/common/tasks/packages.yml b/roles/common/tasks/packages.yml[m
+[1mindex 0992579..96ef9bc 100644[m
+[1m--- a/roles/common/tasks/packages.yml[m
+[1m+++ b/roles/common/tasks/packages.yml[m
+[36m@@ -5,6 +5,7 @@[m
+ #   1. EPEL   — certains paquets de base peuvent venir d'EPEL[m
+ #   2. Update — partir d'un système à jour avant d'installer quoi que ce soit[m
+ #   3. Paquets de base[m
+[32m+[m[32m#   Note : firewalld est démarré dans firewalld.yml (importé séparément par main.yml)[m
+ [m
+ # -----------------------------------------------------------------------------[m
+ # Dépôt EPEL[m
+[36m@@ -57,13 +58,3 @@[m
+   ansible.builtin.dnf:[m
+     name: "{{ common_packages }}"[m
+     state: present[m
+[31m-[m
+[31m-# -----------------------------------------------------------------------------[m
+[31m-# Firewalld — démarrer et activer maintenant, configurer dans les rôles métier[m
+[31m-# -----------------------------------------------------------------------------[m
+[31m-[m
+[31m-- name: "packages | Démarrer et activer firewalld"[m
+[31m-  ansible.builtin.systemd:[m
+[31m-    name: firewalld[m
+[31m-    state: started[m
+[31m-    enabled: true[m
+[1mdiff --git a/roles/nextcloud/tasks/ldap.yml b/roles/nextcloud/tasks/ldap.yml[m
+[1mindex 116ffa1..0067696 100644[m
+[1m--- a/roles/nextcloud/tasks/ldap.yml[m
+[1m+++ b/roles/nextcloud/tasks/ldap.yml[m
+[36m@@ -6,13 +6,6 @@[m
+ # ipaUniqueID comme attribut UUID : valeur stable assignée par FreeIPA à chaque[m
+ # entrée, contrairement à entryUUID qui peut changer. Sans cet attribut, Nextcloud[m
+ # duplique les comptes utilisateurs à chaque reconnexion LDAP.[m
+[31m-#[m
+[31m-# Stratégie d'idempotence :[m
+[31m-#   1. ldap:show-config --output (sortie JSON en NC ≥ 29) : si aucune config[m
+[31m-#      n'existe, la commande retourne un tableau vide [][m
+[31m-#   2. Si le tableau est vide → create-empty-config + parsing du prefix[m
+[31m-#   3. Sinon → récupération du prefix depuis la clé JSON[m
+[31m-#   4. Tous les ldap:set-config sont idempotents — sûrs à rejouer[m
+ [m
+ - name: "ldap | Vérifier que FreeIPA LDAP est accessible"[m
+   ansible.builtin.wait_for:[m
+[36m@@ -30,47 +23,27 @@[m
+   retries: 3[m
+   delay: 10[m
+ [m
+[31m-- name: "ldap | Lister les configurations LDAP existantes (JSON)"[m
+[31m-  ansible.builtin.command:[m
+[31m-    cmd: php {{ nextcloud_webroot }}/occ ldap:show-config --output json[m
+[31m-  become: true[m
+[31m-  become_user: apache[m
+[31m-  register: nextcloud_ldap_show[m
+[31m-  changed_when: false[m
+[31m-[m
+[31m-- name: "ldap | Parser la sortie JSON des configs LDAP"[m
+[31m-  ansible.builtin.set_fact:[m
+[31m-    nextcloud_ldap_configs: "{{ nextcloud_ldap_show.stdout | from_json }}"[m
+[31m-[m
+[31m-- name: "ldap | Créer une config LDAP vide si nécessaire"[m
+[32m+[m[32m# Création de la config vide et récupération du préfixe en une seule passe[m
+[32m+[m[32m- name: "ldap | Créer une config LDAP vide (idempotent)"[m
+   ansible.builtin.command:[m
+     cmd: php {{ nextcloud_webroot }}/occ ldap:create-empty-config[m
+   become: true[m
+   become_user: apache[m
+[31m-  register: nextcloud_create_config[m
+[31m-  when: nextcloud_ldap_configs | length == 0[m
+[31m-  changed_when: true[m
+[31m-[m
+[31m-- name: "ldap | Re-lister les configs après création"[m
+[31m-  ansible.builtin.command:[m
+[31m-    cmd: php {{ nextcloud_webroot }}/occ ldap:show-config --output json[m
+[31m-  become: true[m
+[31m-  become_user: apache[m
+[31m-  register: nextcloud_ldap_show_after[m
+[31m-  changed_when: false[m
+[31m-  when: nextcloud_ldap_configs | length == 0[m
+[32m+[m[32m  register: nextcloud_ldap_create[m
+[32m+[m[32m  changed_when: "'already exists' not in nextcloud_ldap_create.stderr"[m
+[32m+[m[32m  failed_when: nextcloud_ldap_create.rc != 0 and 'already exists' not in nextcloud_ldap_create.stderr[m
+ [m
+[31m-- name: "ldap | Déterminer le prefix de la première config LDAP"[m
+[32m+[m[32m# Extrait le préfixe de la sortie "Saved empty configuration for s01"[m
+[32m+[m[32m- name: "ldap | Déterminer le préfixe de la config LDAP"[m
+   ansible.builtin.set_fact:[m
+     nextcloud_ldap_config_prefix: >-[m
+[31m-      {{ ((nextcloud_ldap_configs | length > 0)[m
+[31m-          | ternary(nextcloud_ldap_configs, nextcloud_ldap_show_after.stdout | from_json))[m
+[32m+[m[32m      {{ (nextcloud_ldap_create.stdout | regex_search('for (\\w+)$', '\\1'))[m
+          | first[m
+[31m-         | first }}[m
+[32m+[m[32m         | default('s01') }}[m
+ [m
+[31m-- name: "ldap | Afficher le prefix LDAP actif"[m
+[32m+[m[32m- name: "ldap | Afficher le préfixe LDAP actif"[m
+   ansible.builtin.debug:[m
+[31m-    msg: "Configuration LDAP active détectée : {{ nextcloud_ldap_config_prefix }}"[m
+[32m+[m[32m    msg: "Configuration LDAP active : {{ nextcloud_ldap_config_prefix }}"[m
+ [m
+ - name: "ldap | Serveur LDAP (host)"[m
+   ansible.builtin.command:[m

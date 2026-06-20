@@ -1,0 +1,12 @@
+---
+# roles/common/tasks/firewalld.yml
+#
+# Démarre et active firewalld sur toutes les VMs Rocky Linux.
+# Les règles métier sont définies dans les rôles spécifiques (freeipa_server,
+# reverse_proxy, nextcloud, mailserver, odoo, rocketchat).
+
+- name: "firewalld | Démarrer et activer firewalld"
+  ansible.builtin.systemd:
+    name: firewalld
+    state: started
+    enabled: true

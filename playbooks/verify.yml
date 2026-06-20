@@ -2,8 +2,8 @@
 # playbooks/verify.yml
 #
 # Smoke tests post déploiement.
-# Vérifie l état des fondations communes à toutes les VM Rocky Linux,
-# puis ajoute des tests spécifiques par service au fur et à mesure des phases.
+# Les services systemd attendus par VM sont listés dans group_vars/all/vars.yml
+# sous la variable verify_services.
 
 - name: "Vérification, fondations OS et FreeIPA client"
   hosts: rocky_hosts
@@ -13,9 +13,9 @@
   tasks:
     - name: "Verify | SELinux en mode enforcing"
       ansible.builtin.command: getenforce
-      register: selinux_mode
+      register: verify_selinux_mode
       changed_when: false
-      failed_when: selinux_mode.stdout != "Enforcing"
+      failed_when: verify_selinux_mode.stdout != "Enforcing"
 
     - name: "Verify | Chronyd actif et synchronisé"
       ansible.builtin.command: chronyc tracking
@@ -23,13 +23,14 @@
       changed_when: false
       failed_when: "'Leap status     : Normal' not in chrony_status.stdout"
 
-    - name: "Verify | Firewalld actif"
+    - name: "Verify | Tous les services systemd attendus sont actifs"
       ansible.builtin.systemd:
-        name: firewalld
+        name: "{{ item }}"
         state: started
       check_mode: true
-      register: firewalld_check
-      failed_when: firewalld_check.changed
+      register: verify_services_check
+      failed_when: verify_services_check.changed
+      loop: "{{ verify_systemd_services[inventory_hostname] | default([]) }}"
 
     - name: "Verify | Keytab Kerberos présent (clients IPA uniquement)"
       ansible.builtin.command: klist -k /etc/krb5.keytab
@@ -56,14 +57,6 @@
   gather_facts: false
 
   tasks:
-    - name: "Verify | Nginx actif"
-      ansible.builtin.systemd:
-        name: nginx
-        state: started
-      check_mode: true
-      register: nginx_check
-      failed_when: nginx_check.changed
-
     - name: "Verify | Configuration nginx valide"
       ansible.builtin.command: nginx -t
       changed_when: false
@@ -102,38 +95,6 @@
   gather_facts: false
 
   tasks:
-    - name: "Verify | Postfix actif"
-      ansible.builtin.systemd:
-        name: postfix
-        state: started
-      check_mode: true
-      register: postfix_check
-      failed_when: postfix_check.changed
-
-    - name: "Verify | Dovecot actif"
-      ansible.builtin.systemd:
-        name: dovecot
-        state: started
-      check_mode: true
-      register: dovecot_check
-      failed_when: dovecot_check.changed
-
-    - name: "Verify | SOGo actif"
-      ansible.builtin.systemd:
-        name: sogod
-        state: started
-      check_mode: true
-      register: sogo_check
-      failed_when: sogo_check.changed
-
-    - name: "Verify | Rspamd actif"
-      ansible.builtin.systemd:
-        name: rspamd
-        state: started
-      check_mode: true
-      register: rspamd_check
-      failed_when: rspamd_check.changed
-
     - name: "Verify | SMTP port 25 en écoute"
       ansible.builtin.wait_for:
         host: "127.0.0.1"
@@ -154,14 +115,6 @@
   gather_facts: false
 
   tasks:
-    - name: "Verify | Service odoo actif"
-      ansible.builtin.systemd:
-        name: odoo
-        state: started
-      check_mode: true
-      register: odoo_check
-      failed_when: odoo_check.changed
-
     - name: "Verify | Page de login Odoo répond HTTP 200 sur port 8069"
       ansible.builtin.uri:
         url: "http://127.0.0.1:8069/web/login"

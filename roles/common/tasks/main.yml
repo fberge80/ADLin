@@ -13,6 +13,10 @@
   when: common_manage_ntp | bool
   # Désactivé sur ipaservers : FreeIPA server installer gère chrony lui-même
 
+- name: "Common | Firewalld"
+  ansible.builtin.import_tasks: firewalld.yml
+  tags: [common, firewalld]
+
 - name: "Common | Enrollment FreeIPA client"
   ansible.builtin.import_tasks: freeipa_client.yml
   tags: [common, freeipa, ipa]

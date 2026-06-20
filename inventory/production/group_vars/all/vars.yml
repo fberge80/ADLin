@@ -44,6 +44,36 @@ ipaclient_force_join: false
 # Ajoutés au fur et à mesure des déploiements de service
 # -----------------------------------------------------------------------------
 sogo_db_password:             "{{ vault_sogo_db_password }}"
+verify_systemd_services:
+  ipa01.adlin.lab:
+    - chronyd
+    - firewalld
+  proxy01.adlin.lab:
+    - nginx
+    - certmonger
+    - chronyd
+    - firewalld
+  mail01.adlin.lab:
+    - postfix
+    - dovecot
+    - sogod
+    - rspamd
+    - chronyd
+    - firewalld
+  cloud01.adlin.lab:
+    - httpd
+    - mariadb
+    - chronyd
+    - firewalld
+  erp01.adlin.lab:
+    - odoo
+    - postgresql
+    - chronyd
+    - firewalld
+  chat01.adlin.lab:
+    - docker
+    - chronyd
+    - firewalld
 
 ldap_bind_password_nextcloud: "{{ vault_ldap_bind_password_nextcloud }}"
 ldap_bind_password_mail: "{{ vault_ldap_bind_password_mail }}"

@@ -5,6 +5,7 @@
 #   1. EPEL   — certains paquets de base peuvent venir d'EPEL
 #   2. Update — partir d'un système à jour avant d'installer quoi que ce soit
 #   3. Paquets de base
+#   Note : firewalld est démarré dans firewalld.yml (importé séparément par main.yml)
 
 # -----------------------------------------------------------------------------
 # Dépôt EPEL
@@ -57,13 +58,3 @@
   ansible.builtin.dnf:
     name: "{{ common_packages }}"
     state: present
-
-# -----------------------------------------------------------------------------
-# Firewalld — démarrer et activer maintenant, configurer dans les rôles métier
-# -----------------------------------------------------------------------------
-
-- name: "packages | Démarrer et activer firewalld"
-  ansible.builtin.systemd:
-    name: firewalld
-    state: started
-    enabled: true

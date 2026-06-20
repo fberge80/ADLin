@@ -6,13 +6,6 @@
 # ipaUniqueID comme attribut UUID : valeur stable assignée par FreeIPA à chaque
 # entrée, contrairement à entryUUID qui peut changer. Sans cet attribut, Nextcloud
 # duplique les comptes utilisateurs à chaque reconnexion LDAP.
-#
-# Stratégie d'idempotence :
-#   1. ldap:show-config --output (sortie JSON en NC ≥ 29) : si aucune config
-#      n'existe, la commande retourne un tableau vide []
-#   2. Si le tableau est vide → create-empty-config + parsing du prefix
-#   3. Sinon → récupération du prefix depuis la clé JSON
-#   4. Tous les ldap:set-config sont idempotents — sûrs à rejouer
 
 - name: "ldap | Vérifier que FreeIPA LDAP est accessible"
   ansible.builtin.wait_for:
@@ -30,47 +23,27 @@
   retries: 3
   delay: 10
 
-- name: "ldap | Lister les configurations LDAP existantes (JSON)"
-  ansible.builtin.command:
-    cmd: php {{ nextcloud_webroot }}/occ ldap:show-config --output json
-  become: true
-  become_user: apache
-  register: nextcloud_ldap_show
-  changed_when: false
-
-- name: "ldap | Parser la sortie JSON des configs LDAP"
-  ansible.builtin.set_fact:
-    nextcloud_ldap_configs: "{{ nextcloud_ldap_show.stdout | from_json }}"
-
-- name: "ldap | Créer une config LDAP vide si nécessaire"
+# Création de la config vide et récupération du préfixe en une seule passe
+- name: "ldap | Créer une config LDAP vide (idempotent)"
   ansible.builtin.command:
     cmd: php {{ nextcloud_webroot }}/occ ldap:create-empty-config
   become: true
   become_user: apache
-  register: nextcloud_create_config
-  when: nextcloud_ldap_configs | length == 0
-  changed_when: true
+  register: nextcloud_ldap_create
+  changed_when: "'already exists' not in nextcloud_ldap_create.stderr"
+  failed_when: nextcloud_ldap_create.rc != 0 and 'already exists' not in nextcloud_ldap_create.stderr
 
-- name: "ldap | Re-lister les configs après création"
-  ansible.builtin.command:
-    cmd: php {{ nextcloud_webroot }}/occ ldap:show-config --output json
-  become: true
-  become_user: apache
-  register: nextcloud_ldap_show_after
-  changed_when: false
-  when: nextcloud_ldap_configs | length == 0
-
-- name: "ldap | Déterminer le prefix de la première config LDAP"
+# Extrait le préfixe de la sortie "Saved empty configuration for s01"
+- name: "ldap | Déterminer le préfixe de la config LDAP"
   ansible.builtin.set_fact:
     nextcloud_ldap_config_prefix: >-
-      {{ ((nextcloud_ldap_configs | length > 0)
-          | ternary(nextcloud_ldap_configs, nextcloud_ldap_show_after.stdout | from_json))
+      {{ (nextcloud_ldap_create.stdout | regex_search('for (\\w+)$', '\\1'))
          | first
-         | first }}
+         | default('s01') }}
 
-- name: "ldap | Afficher le prefix LDAP actif"
+- name: "ldap | Afficher le préfixe LDAP actif"
   ansible.builtin.debug:
-    msg: "Configuration LDAP active détectée : {{ nextcloud_ldap_config_prefix }}"
+    msg: "Configuration LDAP active : {{ nextcloud_ldap_config_prefix }}"
 
 - name: "ldap | Serveur LDAP (host)"
   ansible.builtin.command:
