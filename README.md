@@ -94,7 +94,7 @@ for a small-to-medium business (10–200 employees), featuring:
            │                             │                             │
     ┌──────▼──────┐               ┌──────▼──────┐              ┌──────▼──────┐
     │   ipa01     │               │  proxy01    │              │  cloud01    │
-    │ Rocky 9     │               │  Rocky 9    │              │  Rocky 9    │
+    │   Rocky 9   │               │  Rocky 9    │              │  Rocky 9    │
     │ FreeIPA     │◄──────────────│  Nginx      │◄─────────────│  Nextcloud  │
     │ DNS · PKI   │   LDAPS/636   │  TLS        │   reverse    │  Apache     │
     │ Kerberos    │               │  certmonger │   proxy      │  PHP        │
@@ -102,22 +102,22 @@ for a small-to-medium business (10–200 employees), featuring:
            ▲                             │
            │  LDAP/Kerberos              │ reverse proxy
            │  auth (all services)        │
-    ┌──────┴──────────────────────────────────────────────────────────┐
-    │                            |             |          |           |
-┌───▼─────┐               ┌──────▼──────┐ ┌────▼────┐ ┌───▼────┐ ┌──▼─────┐
-│ mail01  │               │   erp01     │ │ chat01  │ │ pbx01  │ │        │
-│ Rocky 9 │               │   Rocky 9   │ │ Rocky 9 │ │Debian12│ │        │
-│Postfix  │               │   Odoo      │ │Rocket.  │ │FreePBX │ │        │
-│Dovecot  │               │   CE        │ │Chat     │ │        │ │        │
-│SOGo     │               │   PostgreSQL│ │MongoDB  │ │Asterisk│ │        │
-│Rspamd   │               │             │ │(Docker) │ │        │ │        │
-└─────────┘               └─────────────┘ └─────────┘ └────────┘ └────────┘
+    ┌──────┴───────────────────────────────────────────---──┐
+    │               |            |              |           |
+┌───▼────-─┐ ┌──────▼─────┐ ┌────▼───----─┐ ┌───▼───--─┐ ┌──▼─────┐
+│  mail01  │ │  erp01     │ │  chat01     │ │  pbx01   │ │        │
+│  Rocky 9 │ │  Rocky 9   │ │  Rocky 9    │ │  Debian12│ │        │
+│ Postfix   │ │ Odoo CE    │ │ Rocket Chat │ │ FreePBX  │ │        │
+│ Dovecot  │ | PostgreSQL │ │ MongoDB     │ │ Asterisk │ │        │
+│ SOGo     │ │            │ │ (Docker)    │ │          │ │        │
+│ Rspamd   │ │            │ │             │ │          │ │        │
+└────────-─┘ └────────────┘ └────────----─┘ └───────-─-┘ └────────┘
 ```
 
 ### What each service replaces
 
 | Deployed service | Replaces |
-|---|---|
+|---|---|(Docker)
 | Postfix + Dovecot + SOGo + Rspamd | Microsoft 365 Outlook / Exchange, Google Workspace Gmail |
 | Nextcloud | Google Drive, OneDrive/SharePoint, Dropbox Business |
 | Odoo Community Edition | HubSpot CRM, Salesforce, Zoho CRM, Sage |
