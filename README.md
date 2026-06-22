@@ -28,61 +28,6 @@ for a small-to-medium business (10–200 employees), featuring:
 
 ---
 
-## Status
-
-> This repository is under active construction. The table below shows what's
-> implemented and working today, versus the final target scope described in the
-> architecture section.
-
-### ✅ Implemented and functional
-
-- **`common` role** — Rocky Linux 9 hardening: SELinux enforcing, EPEL/CRB,
-  base packages, chrony (client or NTP server), FreeIPA client enrollment,
-  firewalld
-- **`freeipa_server` role** — Full FreeIPA Server deployment: integrated DNS,
-  Dogtag PKI, KRA (Key Recovery Authority), LDAP service accounts in
-  `cn=sysaccounts`, POSIX application groups, firewalld rules
-- **`reverse_proxy` role** — Nginx with automated TLS via certmonger and the
-  FreeIPA CA: Kerberos service principal, multi-SAN certificate, SELinux booleans,
-  templated vhosts (Odoo longpolling support), HSTS and security headers
-- **`mailserver` role** — Complete mail stack with FreeIPA LDAP authentication:
-  - Postfix: MTA, LDAP virtual mailboxes, LMTP delivery → Dovecot, submission
-    SASL/STARTTLS (587), antispam filter via Rspamd milter
-  - Dovecot: IMAPS (993), FreeIPA `auth_bind` (your password never touches the
-    directory—magic), virtual Maildir storage, ManageSieve (4190)
-  - Rspamd: milter-based antispam, Redis cache (bayes, rate limiting)
-  - SOGo: webmail + CalDAV + CardDAV + ActiveSync, PostgreSQL backend, local
-    nginx frontend (proxy01 → mail01:80 → sogod:20000)
-  - certmonger: multi-SAN certificate (`mail01.adlin.lab` + `mail.adlin.lab`)
-    via FreeIPA CA, automatic renewal
-- **`nextcloud` role** — Nextcloud on Apache + PHP with fully automated FreeIPA LDAP
-    authentication via `occ`:
-  - `user_ldap` enabled and configured (server, filter, bind DN) via `occ ldap:set-config`
-  - `ipaUniqueID` as UUID attribute — prevents duplicate accounts on LDAP
-    reconnections (stable value, unlike `entryUUID` which has commitment issues)
-  - Access restricted to FreeIPA `nextcloud_users` group
-  - Local MariaDB (utf8mb4_unicode_ci), data outside webroot in `/var/nc_data`
-  - Dual-SAN TLS certificate (`cloud01.adlin.lab` + `cloud.adlin.lab`) via
-    certmonger/Dogtag, automatic renewal
-  - `AllowEncodedSlashes NoDecode` — required for CalDAV/CardDAV with Apache
-  - SELinux enforcing (`httpd_sys_rw_content_t` on `/var/nc_data`), HTTPS
-    only (443/tcp)
-- **`odoo` role** — Odoo Community Edition via official nightly RPM with FreeIPA LDAP
-  authentication (module `auth_ldap` enabled automatically via CLI):
-  - Local PostgreSQL (peer authentication — no TCP password to leak)
-  - Multi-process workers (4 workers + longpolling port 8072)
-  - `proxy_mode = True` — essential behind nginx (X-Forwarded-Proto → HTTPS)
-  - Idempotent guards: database init (table `ir_module_module`) + auth_ldap (state)
-  - No TLS on erp01 — proxy01 terminates TLS, Odoo listens in HTTP bliss
-  - Post-deploy LDAP configuration documented (Settings → Technical → LDAP)
-- **`rocketchat` role** — Rocket.Chat via Docker Compose, FreeIPA LDAP/group sync
-- **`freepbx` role** — FreePBX + Asterisk on Debian, IPA SSH/sudo enrollment
-- **Tooling** — Makefile (`make deploy-*` targets), `verify.yml` playbook
-  (smoke tests: SELinux, chrony, Kerberos, nginx, certmonger), Ansible Vault with
-  `vars.yml` / `vault.yml` indirection pattern, ansible-lint and yamllint
-
----
-
 ## Architecture
 
 ```
@@ -90,8 +35,8 @@ for a small-to-medium business (10–200 employees), featuring:
                         │     Proxmox Virtual Environment     │
                         └────────────────┬────────────────────┘
                                          │
-           ┌─────────────────────────────┼─────────────────────────────┐
-           │                             │                             │
+           ┌─────────────────────────────┼────────────────────────────┐
+           │                             │                            │
     ┌──────▼──────┐               ┌──────▼──────┐              ┌──────▼──────┐
     │   ipa01     │               │  proxy01    │              │  cloud01    │
     │   Rocky 9   │               │  Rocky 9    │              │  Rocky 9    │
@@ -102,16 +47,16 @@ for a small-to-medium business (10–200 employees), featuring:
            ▲                             │
            │  LDAP/Kerberos              │ reverse proxy
            │  auth (all services)        │
-    ┌──────┴───────────────────────────────────────────---──┐
+    ┌──────┴────────────────────────────────────────────────┐
     │               |            |              |           |
-┌───▼────-─┐ ┌──────▼─────┐ ┌────▼───----─┐ ┌───▼───--─┐ ┌──▼─────┐
+┌───▼──────┐ ┌──────▼─────┐ ┌────▼────────┐ ┌───▼──────┐ ┌──▼─────┐
 │  mail01  │ │  erp01     │ │  chat01     │ │  pbx01   │ │        │
 │  Rocky 9 │ │  Rocky 9   │ │  Rocky 9    │ │  Debian12│ │        │
 │ Postfix  │ │ Odoo CE    │ │ Rocket Chat │ │ FreePBX  │ │        │
 │ Dovecot  │ | PostgreSQL │ │ MongoDB     │ │ Asterisk │ │        │
 │ SOGo     │ │            │ │ (Docker)    │ │          │ │        │
 │ Rspamd   │ │            │ │             │ │          │ │        │
-└────────-─┘ └────────────┘ └────────----─┘ └───────-─-┘ └────────┘
+└──────────┘ └────────────┘ └─────────────┘ └──────────┘ └────────┘
 ```
 
 ### What each service replaces
