@@ -1,0 +1,26 @@
+---
+# roles/common/tasks/hostname.yml
+#
+# Définit le FQDN de la VM depuis l'inventaire.
+# Les VMs créées via template PVE bootent avec localhost.localdomain —
+# ce hostname invalide bloque l'enrollment FreeIPA client.
+#
+# Le hostname attendu est dérivé de : inventory_hostname
+# Exemple : proxy01.adlin.lab
+#
+# Placé après SELinux/paquets mais avant l'enrollment IPA.
+
+- name: "hostname | Définir le FQDN de la VM"
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+    use: systemd
+
+- name: "hostname | Vérifier la résolution locale du FQDN"
+  ansible.builtin.command: "hostname -f"
+  register: common_hostname_check
+  changed_when: false
+  failed_when: common_hostname_check.stdout != inventory_hostname
+
+- name: "hostname | Afficher le hostname actif"
+  ansible.builtin.debug:
+    msg: "Hostname : {{ common_hostname_check.stdout }}"

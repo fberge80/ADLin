@@ -46,22 +46,22 @@ reverse_proxy_cert_wait_delay: 10
 # -----------------------------------------------------------------------------
 reverse_proxy_vhosts:
   - name: cloud
-    fqdn: cloud.adlin.lab
-    upstream_url: "http://10.10.10.13"
+    fqdn: cloud01.adlin.lab
+    upstream_url: "http://10.10.10.140"
 
   - name: mail
-    fqdn: mail.adlin.lab
-    upstream_url: "http://10.10.10.12"
+    fqdn: mail01.adlin.lab
+    upstream_url: "http://10.10.10.150"
 
   - name: erp
-    fqdn: erp.adlin.lab
-    upstream_url: "http://10.10.10.14:8069"
-    longpolling_url: "http://10.10.10.14:8072"   # Workers Odoo longpolling
+    fqdn: erp01.adlin.lab
+    upstream_url: "http://10.10.10.141:8069"
+    longpolling_url: "http://10.10.10.141:8072"   # Workers Odoo longpolling
 
   - name: chat
-    fqdn: chat.adlin.lab
-    upstream_url: "http://10.10.10.15:3000"
+    fqdn: chat01.adlin.lab
+    upstream_url: "http://10.10.10.164:3000"
 
   - name: pbx
-    fqdn: pbx.adlin.lab
+    fqdn: pbx01.adlin.lab
     upstream_url: "http://10.10.10.16"

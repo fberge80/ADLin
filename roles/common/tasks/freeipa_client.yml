@@ -20,14 +20,14 @@
 #   - Port 443/tcp (HTTPS) et 88/tcp+udp (Kerberos) ouverts vers ipa01
 
 - name: "freeipa_client | Vérifier la résolution DNS de FreeIPA"
-  ansible.builtin.command: "dig +short {{ ipa_server }}"
+  ansible.builtin.command: "getent hosts {{ ipa_server }}"
   register: common_ipa_dns_check
   changed_when: false
   failed_when: common_ipa_dns_check.stdout == ""
 
 - name: "freeipa_client | Afficher l'adresse IP résolue de FreeIPA"
   ansible.builtin.debug:
-    msg: "FreeIPA server {{ ipa_server }} resolves to: {{ common_ipa_dns_check.stdout }}"
+    msg: "FreeIPA server {{ ipa_server }} resolves to: {{ common_ipa_dns_check.stdout_lines[0].split()[0] }}"
   when: common_ipa_dns_check.stdout != ""
 
 - name: "freeipa_client | Erreur de résolution DNS de FreeIPA"
@@ -43,9 +43,11 @@
     ipadomain: "{{ ipa_domain }}"
     iparealm: "{{ ipa_realm }}"
     ipaserver_hostname: "{{ ipa_server }}"
-    ipaclient_mkhomedir: "{{ ipaclient_mkhomedir }}"
-    ipaclient_no_nisdomain: "{{ ipaclient_no_nisdomain }}"
-    ipaclient_force_join: "{{ ipaclient_force_join }}"
+    # Valeurs en dur pour éviter la boucle de récursion avec la collection v1.16
+    # https://github.com/freeipa/ansible-freeipa/issues/1062
+    ipaclient_mkhomedir: true
+    no_nisdomain: true
+    ipaclient_force_join: false
     # NTP géré par notre tâche chrony — on demande à ipaclient de ne pas y toucher
     ipaclient_configure_dns_resolver: false
     ipaclient_configure_ntp: false
