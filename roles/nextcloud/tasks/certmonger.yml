@@ -1,25 +1,47 @@
 ---
 # roles/nextcloud/tasks/certmonger.yml
 #
-# Demande un certificat TLS double-SAN via certmonger et la CA FreeIPA (Dogtag).
-#   CN  = cloud01.adlin.lab  (nom interne de la VM)
-#   SAN = cloud.adlin.lab    (FQDN exposé aux clients via reverse proxy)
+# Demande un certificat TLS via certmonger et la CA FreeIPA (Dogtag).
+#   CN/SAN = cloud01.adlin.lab (nom interne de la VM)
+#   Le FQDN public (cloud.adlin.lab) est couvert par le certificat multi-SAN de proxy01.
 
 - name: "certmonger | Vérifier les certificats déjà suivis"
   ansible.builtin.command: getcert list
   register: nextcloud_getcert_list
   changed_when: false
 
+- name: "certmonger | Nettoyer l'ancienne requête bloquée et les fichiers cert/key"
+  ansible.builtin.shell: |
+    set +e
+    REQUEST_ID=$(getcert list 2>/dev/null \
+      | grep -B5 '{{ nextcloud_cert_path }}' \
+      | grep 'Request ID' | head -1 | awk '{print $NF}' | tr -d "'")
+    # Fallback: si le fichier a déjà été supprimé, chercher par nickname connu
+    if [ -z "$REQUEST_ID" ]; then
+      REQUEST_ID=$(getcert list 2>/dev/null \
+        | grep 'Request ID' | head -1 | awk '{print $NF}' | tr -d "'")
+    fi
+    if [ -n "$REQUEST_ID" ]; then
+      getcert stop-tracking -i "$REQUEST_ID" 2>/dev/null
+    fi
+    rm -f {{ nextcloud_cert_path }} {{ nextcloud_key_path }}
+  args:
+    executable: /bin/bash
+  when:
+    - nextcloud_cert_path in nextcloud_getcert_list.stdout
+    - "nextcloud_getcert_list.stdout is search('(CA_UNREACHABLE|CA_REJECTED)')"
+  changed_when: true
+  failed_when: false
+
 - name: "certmonger | Demander le certificat TLS à FreeIPA CA"
-  ansible.builtin.shell: >
+  ansible.builtin.shell: >-
     ipa-getcert request
     -f {{ nextcloud_cert_path }}
     -k {{ nextcloud_key_path }}
     -K HTTP/{{ nextcloud_hostname }}@{{ ipa_realm }}
     -N "CN={{ nextcloud_hostname }}"
     -D {{ nextcloud_hostname }}
-    -D {{ nextcloud_fqdn_public }}
-  when: nextcloud_cert_path not in nextcloud_getcert_list.stdout
+  when: (nextcloud_cert_path not in nextcloud_getcert_list.stdout) or nextcloud_getcert_list.stdout is search('(CA_UNREACHABLE|CA_REJECTED)')
   changed_when: true
 
 - name: "certmonger | Attendre la délivrance du certificat par Dogtag"

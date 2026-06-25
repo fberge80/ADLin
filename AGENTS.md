@@ -25,11 +25,16 @@ echo "LIMIT=ipa01.adlin.lab make deploy-common"
 ## Deployment Phases (MUST follow this order)
 1. **Phase 1a**: `make deploy-common` — OS hardening (SELinux enforcing, firewalld, chrony, IPA client enrollment)
 2. **Phase 1b**: `make deploy-freeipa` — FreeIPA Server (DNS, PKI, KRA, service accounts)
-3. **Phase 2**: `make deploy-proxy` — Reverse proxy with TLS (nginx + certmonger)
-4. **Phase 3**: `make deploy-nextcloud`, `make deploy-mail`, `make deploy-rocketchat` — Productivity services
-5. **Phase 4**: `make deploy-odoo`, `make deploy-freepbx` — Business services
+3. **Phase 1c**: `make deploy-pbx-enroll` — Enroll pbx01 (Debian 12) as IPA client (required for multi-SAN cert)
+4. **Phase 2**: `make deploy-proxy` — Reverse proxy with TLS (nginx multi-SAN cert for all vhosts)
+5. **Phase 3**: `make deploy-nextcloud`, `make deploy-mail`, `make deploy-rocketchat` — Productivity services
+6. **Phase 4**: `make deploy-odoo`, `make deploy-freepbx` — Business services
 
 **Never skip phases** — services depend on FreeIPA and TLS being operational first.
+
+Note: Phase 1c (pbx01 enrollment) was separated from Phase 4b (FreePBX) so pbx01
+is enrolled as an IPA host before the reverse proxy multi-SAN certificate is
+requested. IPA requires a host entry for every SAN DNS name.
 
 ## Architecture Facts
 - **FreeIPA is the single source of truth** for all identity — every service authenticates via LDAP/Kerberos
@@ -82,6 +87,9 @@ FreeIPA service accounts are auto-provisioned in `cn=sysaccounts,cn=etc,dc=adlin
 - **Odoo runs HTTP** — proxy01 terminates TLS, Odoo listens on 8069/8072
 - **Nextcloud data** — stored in `/var/nc_data` (outside webroot) with proper SELinux context
 - **FreePBX SSH enrollment** — uses IPA SSH keys for sudo access (no LDAP auth)
+- **pbx01 multi-SAN enrollment** — Phase 1c enrolls pbx01 as IPA host early so the reverse proxy
+  multi-SAN certificate can include pbx01.adlin.lab. Phase 4b (FreePBX) skips re-enrollment
+  (detects existing /etc/ipa/default.conf via `not freepbx_ipa_enrolled.stat.exists`).
 
 ## Testing
 - No unit tests — verification is done via `playbooks/verify.yml` (integration smoke tests)

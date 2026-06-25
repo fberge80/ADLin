@@ -50,7 +50,6 @@ verify_systemd_services:
     - firewalld
   proxy01.adlin.lab:
     - nginx
-    - certmonger
     - chronyd
     - firewalld
   mail01.adlin.lab:

@@ -1,0 +1,135 @@
+---
+# roles/reverse_proxy/tasks/ipa_profile.yml
+#
+# Crée le profil de certificat FreeIPA `caIPAMultiSANCert` sur ipa01.
+#
+# Pourquoi cette tâche existe :
+#   Le profil standard `caIPAServiceCert` de FreeIPA n'autorise PAS un
+#   certificat dont le CSR contient plusieurs Subject Alternative Names
+#   (utile pour le reverse proxy qui sert plusieurs services). Dogtag
+#   rejette alors la requête avec erreur 2100 "Insufficient privilege
+#   to create a certificate with subject alt name".
+#
+#   Mais le vrai blocage n'est PAS le profil Dogtag — c'est la validation
+#   CA-side qui vérifie que chaque DNS du SAN a un principal de service
+#   (ou un host enrollé) dans IPA.
+#
+#   Solution : cloner caIPAServiceCert (8 policies dans le fichier RPM
+#   installé), ajouter `classId=caEnrollImpl` (requis par l'API REST
+#   Dogtag), et AJOUTER la policy `userExtensionDefaultImpl` au slot #9
+#   (OID 2.5.29.17 = SAN passthrough — NE PAS utiliser
+#   subjectAltNameExtDefaultImpl qui est un générateur, pas un copieur).
+#   Créer aussi les principaux HTTP pour chaque DNS du SAN via
+#   `ipa_service.yml`.
+#
+#   Pour un reverse proxy multi-SAN, il faut AUSSI :
+#   1. Une CA ACL (`ipa caacl-add`) qui autorise le principal HTTP du proxy
+#      à utiliser ce profil.
+#   2. Pour CHAQUE SAN DNS, un principal `HTTP/<vm>.<domaine>` dans IPA
+#      (même sans keytab sur le host — cf. ipa_service.yml).
+#      Sans ça, `ipa cert-request` rejette : « Le principal du service
+#      pour le nom <vm>.<domaine> ... n'existe pas ».
+#   3. `host-add-managedby` NE résout PAS ce problème (ne touche pas
+#      les ACLs CA de Dogtag).
+#
+# Note technique (Dogtag createProfileRaw) :
+#   L'endpoint REST Dogtag POST /ca/v1/profiles/raw exige que le CFG
+#   contienne `classId=<classe>` au niveau racine pour pouvoir
+#   instancier le profil. Sans cette directive, Dogtag log
+#   `classId: null` et retourne 400 "Missing class ID".
+#   Pour un profil d'enrollment de serveur, `classId=caEnrollImpl`.
+#   (réf. ProfileService.createProfileRaw() — dogtagpki/pki).
+#
+# Idempotence : `ipa certprofile-show` permet de vérifier l'existence.
+# Sur une infra vierge, le profil n'existe pas → créé via import.
+# Sur une infra existante, déjà présent → skip silencieux.
+
+- name: "ipa_profile | Vérifier si le profil Dogtag existe déjà"
+  ansible.builtin.shell: |
+    set -euo pipefail
+    echo "{{ ipa_admin_password }}" | kinit admin 2>/dev/null
+    ipa certprofile-show caIPAMultiSANCert
+    kdestroy -A 2>/dev/null
+  register: reverse_proxy_profile_check
+  changed_when: false
+  failed_when: false
+  delegate_to: "{{ ipa_server }}"
+
+- name: "ipa_profile | Récupérer le profil source caIPAserviceCert depuis ipa01"
+  ansible.builtin.slurp:
+    src: /var/lib/pki/pki-tomcat/ca/profiles/ca/caIPAserviceCert.cfg
+  register: reverse_proxy_profile_source
+  delegate_to: "{{ ipa_server }}"
+  when: reverse_proxy_profile_check.rc != 0
+
+- name: "ipa_profile | Pousser le profil caIPAMultiSANCert sur ipa01"
+  ansible.builtin.copy:
+    dest: /var/lib/pki/pki-tomcat/ca/profiles/ca/caIPAMultiSANCert.cfg
+    owner: root
+    group: pkiuser
+    mode: "0644"
+    content: "{{ reverse_proxy_profile_source.content | b64decode }}"
+  delegate_to: "{{ ipa_server }}"
+  when: reverse_proxy_profile_check.rc != 0
+
+# inject classId=caEnrollImpl at top of CFG — required by Dogtag REST createProfileRaw()
+- name: "ipa_profile | Injecter classId=caEnrollImpl dans le CFG"
+  ansible.builtin.lineinfile:
+    path: /var/lib/pki/pki-tomcat/ca/profiles/ca/caIPAMultiSANCert.cfg
+    line: "classId=caEnrollImpl"
+    insertbefore: BOF
+    create: false
+  delegate_to: "{{ ipa_server }}"
+  when: reverse_proxy_profile_check.rc != 0
+
+# Le profil source caIPAServiceCert sur disque n'a que 8 policies
+# (1=SubjectName, 2=Validity, 3=Key, 4=AKI, 5=AIA, 6=KeyUsage,
+# 7=EKU, 8=SigningAlg). Il lui MANQUE les policies #9 (CRL DP),
+# #11 (userExtensionDefaultImpl, SAN passthrough) et #12
+# (commonNameToSANDefaultImpl). On ajoute la policy userExtension
+# au slot #9 (libre — les slots 1-8 sont utilisés, #9 n'existe pas).
+# Le OID 2.5.29.17 est celui de subjectAltName (SAN).
+#
+# NE PAS utiliser subjectAltNameExtDefaultImpl — c'est un générateur
+# qui ne copie PAS les SANs du CSR (voir le blog de Fraser Tweedale,
+# 2017-06-26, Wildcard SAN certificates in FreeIPA).
+- name: "ipa_profile | Ajouter la policy userExtensionDefaultImpl (SAN passthrough, slot #9)"
+  ansible.builtin.shell: |
+    set -euo pipefail
+    FILE=/var/lib/pki/pki-tomcat/ca/profiles/ca/caIPAMultiSANCert.cfg
+    cat >> "$FILE" <<'DOGTAGEOF'
+    policyset.serverCertSet.9.constraint.class_id=noConstraintImpl
+    policyset.serverCertSet.9.constraint.name=No Constraint
+    policyset.serverCertSet.9.default.class_id=userExtensionDefaultImpl
+    policyset.serverCertSet.9.default.name=User Supplied Extension Default
+    policyset.serverCertSet.9.default.params.userExtOID=2.5.29.17
+    DOGTAGEOF
+    echo "OK"
+  delegate_to: "{{ ipa_server }}"
+  when: reverse_proxy_profile_check.rc != 0
+  changed_when: true
+
+- name: "ipa_profile | Activer la policy userExtension dans policyset.list (slot #9)"
+  ansible.builtin.shell: |
+    set -euo pipefail
+    FILE=/var/lib/pki/pki-tomcat/ca/profiles/ca/caIPAMultiSANCert.cfg
+    sed -i 's|^policyset.serverCertSet.list=.*|&,9|' "$FILE"
+    grep 'policyset.serverCertSet.list=' "$FILE"
+  delegate_to: "{{ ipa_server }}"
+  when: reverse_proxy_profile_check.rc != 0
+  changed_when: true
+
+- name: "ipa_profile | Importer le profil caIPAMultiSANCert dans IPA"
+  ansible.builtin.shell: |
+    set -euo pipefail
+    echo "{{ ipa_admin_password }}" | kinit admin 2>/dev/null
+    ipa certprofile-import caIPAMultiSANCert \
+      --file=/var/lib/pki/pki-tomcat/ca/profiles/ca/caIPAMultiSANCert.cfg \
+      --store=true \
+      --desc="ADLin multi-SAN TLS certificate (reverse proxy)"
+    kdestroy -A 2>/dev/null
+  register: reverse_proxy_profile_import
+  delegate_to: "{{ ipa_server }}"
+  when: reverse_proxy_profile_check.rc != 0
+  changed_when: true
+  no_log: false

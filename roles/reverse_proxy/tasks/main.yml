@@ -7,6 +7,10 @@
   ansible.builtin.import_tasks: ipa_service.yml
   tags: [reverse_proxy, freeipa, ipa, pki]
 
+- name: "Reverse_proxy | Création du profil Dogtag multi-SAN"
+  ansible.builtin.import_tasks: ipa_profile.yml
+  tags: [reverse_proxy, freeipa, ipa, pki, certprofile]
+
 - name: "Reverse_proxy | Demande et suivi certificat TLS (certmonger)"
   ansible.builtin.import_tasks: certmonger.yml
   tags: [reverse_proxy, certmonger, tls, pki]

@@ -1,60 +1,154 @@
 ---
 # roles/mailserver/tasks/certmonger.yml
 #
-# Demande un certificat TLS multi-SAN via certmonger et la CA FreeIPA (Dogtag).
-# Le certificat couvre :
-#   CN  = mail01.adlin.lab  (nom interne de la VM)
-#   SAN = mail.adlin.lab    (FQDN exposé aux clients via reverse proxy)
+# Obtient un certificat TLS multi-SAN signé par le CA FreeIPA (Dogtag).
 #
-# Principal Kerberos : smtp/mail01.adlin.lab@ADLIN.LAB
-# Ce certificat est partagé par Postfix (STARTTLS 25/587) et Dovecot (IMAPS 993).
-# C'est le plus petit dénominateur commun : les deux services ont besoin d'un
-# certificat TLS valide, et certmonger ne demande qu'un seul certificat par
-# chemin de fichier. Le nom du principal (smtp) est arbitraire — seul le chemin
-# du fichier compte pour la distribution aux deux démons.
+# Pourquoi ce flux (CSR openssl + ipa cert-request) et pas certmonger ?
+#   certmonger s'authentifie avec le keytab host/mail01 (qui n'a pas les droits
+#   LDAP pour déposer le certificat si le SAN pointe vers un autre host).
+#   Le keytab admin contourne ces restrictions ACI.
 #
-# Le module ipa_service.yml crée le principal correspondant dans FreeIPA
+# Flux :
+#   1. Vérifier expiration du cert existant (> 30 jours restants = skip)
+#   2. Générer clé privée + CSR sur mail01 (openssl + addext SAN)
+#   3. Récupérer le CSR sur le control node
+#   4. Déléguer ipa cert-request sur ipa01 (admin)
+#   5. Distribuer le certificat PEM sur mail01
+#   6. Nettoyer les fichiers temporaires
 
-- name: "certmonger | Vérifier les certificats déjà suivis"
-  ansible.builtin.command: getcert list
-  register: mailserver_getcert_list
+# ── 1. Vérifier si le certificat existant est valide (> 30 jours restants) ──
+
+- name: "certmonger | Vérifier l'expiration du certificat existant"
+  ansible.builtin.shell: |
+    set -euo pipefail
+    if [ ! -f {{ mailserver_cert_path }} ]; then
+      echo "ABSENT"
+    else
+      expiry=$(openssl x509 -enddate -noout -in {{ mailserver_cert_path }} \
+               | cut -d= -f2)
+      expiry_epoch=$(date -d "$expiry" +%s)
+      now_epoch=$(date +%s)
+      days_left=$(( (expiry_epoch - now_epoch) / 86400 ))
+      if [ "$days_left" -lt 30 ]; then
+        echo "EXPIRING_IN_${days_left}_DAYS"
+      else
+        echo "VALID_${days_left}_DAYS"
+      fi
+    fi
+  register: mailserver_cert_status_check
   changed_when: false
 
-- name: "certmonger | Demander le certificat TLS à FreeIPA CA"
-  ansible.builtin.shell: >
-    ipa-getcert request
-    -f {{ mailserver_cert_path }}
-    -k {{ mailserver_key_path }}
-    -K smtp/{{ mailserver_hostname }}@{{ ipa_realm }}
-    -N "CN={{ mailserver_hostname }}"
-    -D {{ mailserver_hostname }}
-    -D mail.{{ mailserver_domain }}
-  when: mailserver_cert_path not in mailserver_getcert_list.stdout
+- name: "certmonger | Afficher le statut du certificat"
+  ansible.builtin.debug:
+    msg: "Certificat mail01 : {{ mailserver_cert_status_check.stdout }}"
+
+- name: "certmonger | Définir si le certificat doit être (re)généré"
+  ansible.builtin.set_fact:
+    mailserver_cert_needed: >-
+      {{ 'ABSENT' in mailserver_cert_status_check.stdout
+         or 'EXPIRING' in mailserver_cert_status_check.stdout }}
+
+# ── 2. Construire la liste des SANs ──────────────────────────────────────────
+
+- name: "certmonger | Construire l'extension SAN pour OpenSSL"
+  ansible.builtin.set_fact:
+    mailserver_san_openssl: >-
+      DNS:{{ mailserver_hostname }},DNS:mail.{{ mailserver_domain }}
+
+# ── 3. Générer clé privée + CSR sur mail01 ──────────────────────────────────
+
+- name: "certmonger | Générer la clé privée et le CSR sur mail01"
+  ansible.builtin.shell: |
+    openssl req -new -newkey rsa:2048 -nodes \
+      -keyout {{ mailserver_key_path }} \
+      -out /tmp/mail01_multiSAN.csr \
+      -subj "/CN={{ mailserver_hostname }}" \
+      -addext "subjectAltName={{ mailserver_san_openssl }}" 2>/dev/null
+    chmod 640 {{ mailserver_key_path }}
+  when: mailserver_cert_needed | bool
   changed_when: true
 
-- name: "certmonger | Attendre la délivrance du certificat par Dogtag"
-  ansible.builtin.command: getcert list -f {{ mailserver_cert_path }}
-  register: mailserver_cert_status
-  until: "'status: MONITORING' in mailserver_cert_status.stdout"
-  retries: "{{ mailserver_cert_wait_retries }}"
-  delay: "{{ mailserver_cert_wait_delay }}"
+# ── 4. Récupérer le CSR sur le control node ──────────────────────────────────
+
+- name: "certmonger | Récupérer le CSR depuis mail01"
+  ansible.builtin.fetch:
+    src: /tmp/mail01_multiSAN.csr
+    dest: /tmp/mail01_multiSAN.csr
+    flat: true
+  when: mailserver_cert_needed | bool
+
+# ── 5. Signer le CSR sur ipa01 en tant qu'admin ──────────────────────────────
+
+- name: "certmonger | Envoyer le CSR sur ipa01"
+  ansible.builtin.copy:
+    src: /tmp/mail01_multiSAN.csr
+    dest: /tmp/mail01_multiSAN.csr
+    mode: "0644"
+  delegate_to: ipa01.adlin.lab
+  when: mailserver_cert_needed | bool
+
+- name: "certmonger | Signer le certificat multi-SAN via ipa cert-request (admin)"
+  ansible.builtin.shell: |
+    set -euo pipefail
+    echo "{{ ipa_admin_password }}" | kinit admin 2>/dev/null
+    ipa cert-request /tmp/mail01_multiSAN.csr \
+      --principal=smtp/{{ mailserver_hostname }} \
+      --profile-id=caIPAMultiSANCert \
+      --certificate-out=/tmp/mail01_multiSAN.crt
+    kdestroy -A 2>/dev/null
+    echo "OK"
+  delegate_to: ipa01.adlin.lab
+  register: mailserver_cert_sign
+  when: mailserver_cert_needed | bool
+  changed_when: "'OK' in mailserver_cert_sign.stdout"
+  no_log: true
+
+# ── 6. Distribuer le certificat sur mail01 ──────────────────────────────────
+
+- name: "certmonger | Récupérer le certificat signé depuis ipa01"
+  ansible.builtin.fetch:
+    src: /tmp/mail01_multiSAN.crt
+    dest: /tmp/mail01_multiSAN.crt
+    flat: true
+  delegate_to: ipa01.adlin.lab
+  when: mailserver_cert_needed | bool
+
+- name: "certmonger | Déployer le certificat sur mail01"
+  ansible.builtin.copy:
+    src: /tmp/mail01_multiSAN.crt
+    dest: "{{ mailserver_cert_path }}"
+    mode: "0644"
+    owner: root
+    group: root
+  when: mailserver_cert_needed | bool
+
+# ── 7. Nettoyer les fichiers temporaires ─────────────────────────────────────
+
+- name: "certmonger | Nettoyer les fichiers temporaires (ipa01)"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/mail01_multiSAN.csr
+    - /tmp/mail01_multiSAN.crt
+  delegate_to: ipa01.adlin.lab
+  when: mailserver_cert_needed | bool
+
+- name: "certmonger | Nettoyer les fichiers temporaires (mail01)"
+  ansible.builtin.file:
+    path: /tmp/mail01_multiSAN.csr
+    state: absent
+  when: mailserver_cert_needed | bool
+
+# ── 8. Vérification finale ───────────────────────────────────────────────────
+
+- name: "certmonger | Vérifier le certificat déployé"
+  ansible.builtin.shell: |
+    openssl x509 -noout -subject -enddate -ext subjectAltName \
+      -in {{ mailserver_cert_path }} 2>/dev/null
+  register: mailserver_cert_verify
   changed_when: false
-  failed_when: >
-    mailserver_cert_status.stdout is defined and
-    ("status: CA_UNREACHABLE" in mailserver_cert_status.stdout or
-     "status: NEED_GUIDANCE" in mailserver_cert_status.stdout)
 
-- name: "certmonger | Afficher l'état du certificat"
+- name: "certmonger | Afficher le certificat déployé"
   ansible.builtin.debug:
-    msg: "{{ mailserver_cert_status.stdout_lines }}"
-
-- name: "certmonger | Erreur de délivrance du certificat"
-  ansible.builtin.fail:
-    msg: >
-      Le certificat n'a pas pu être délivré par Dogtag CA.
-      État actuel: {{ mailserver_cert_status.stdout_lines | join(' ') }}
-      Vérifiez la connectivité avec FreeIPA et les logs dans /var/log/ipaclient/ipaclient-install.log
-  when: >
-    mailserver_cert_status.stdout is defined and
-    ("status: CA_UNREACHABLE" in mailserver_cert_status.stdout or
-     "status: NEED_GUIDANCE" in mailserver_cert_status.stdout)
+    msg: "{{ mailserver_cert_verify.stdout_lines }}"

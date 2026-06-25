@@ -1,17 +1,31 @@
 ---
 # roles/reverse_proxy/tasks/ipa_service.yml
 #
-# Crée le principal de service HTTP/proxy01.adlin.lab dans FreeIPA.
+# Crée les principaux de service HTTP dans FreeIPA nécessaires au
+# certificat TLS multi-SAN du reverse proxy.
 #
 # Concept — principal de service Kerberos :
 #   Un "service principal" est une identité Kerberos pour un service réseau.
 #   La forme est SERVICE/hostname@REALM (ex: HTTP/proxy01.adlin.lab@ADLIN.LAB).
-#   Il est nécessaire pour que certmonger puisse demander un certificat TLS
-#   à la CA FreeIPA : le certificat est lié au principal, ce qui permet
-#   à certmonger de le renouveler automatiquement avec les mêmes droits.
+#
+#   Pour le cert TLS multi-SAN du reverse proxy, la CA FreeIPA exige qu'à
+#   chaque SAN DNS corresponde un service principal enregistré. C'est un
+#   garde-fou de sécurité : il empêche de signer un cert pour un host
+#   arbitraire sans laisser de trace d'identité.
+#
+#   On crée donc :
+#     - HTTP/proxy01.adlin.lab   (le proxy lui-même, porteur du cert)
+#     - HTTP/<vm>.adlin.lab      (un service par VM cible du SAN, ex :
+#                                 cloud01, mail01, erp01, chat01, pbx01)
+#
+#   Les services HTTP "secondaires" ne sont pas utilisés fonctionnellement
+#   (pas de keytab sur ces VMs, pas de SPNEGO) — ils servent uniquement
+#   à satisfaire la validation de `ipa cert-request` au moment de la
+#   signature du cert multi-SAN. C'est documenté dans le rôle.
 #
 # Prérequis :
-#   - proxy01 doit être enrollé comme client FreeIPA (keytab /etc/krb5.keytab)
+#   - Chaque VM cible doit être enrollée comme host dans FreeIPA
+#     (fait par make deploy-common / Phase 1a)
 #   - vault_ipa_admin_password doit être défini dans vault.yml
 
 - name: "ipa_service | Créer le principal HTTP pour proxy01"
@@ -23,3 +37,17 @@
   delegate_to: ipa01.adlin.lab
   # La création du principal se fait via l'API FreeIPA sur ipa01,
   # pas depuis proxy01 lui-même
+
+- name: "ipa_service | Créer les principaux HTTP pour chaque VM cible (SAN multi-host)"
+  freeipa.ansible_freeipa.ipaservice:
+    ipaadmin_password: "{{ ipa_admin_password }}"
+    name: "HTTP/{{ item.fqdn }}"
+    state: present
+  loop: "{{ reverse_proxy_vhosts }}"
+  loop_control:
+    label: "HTTP/{{ item.fqdn }}"
+  delegate_to: ipa01.adlin.lab
+  # Idempotent. Ces services sont des "placeholders" Kerberos : ils
+  # permettent à la CA de valider que chaque SAN DNS correspond à un
+  # principal enregistré. Aucune keytab n'est posée sur ces VMs ; ils
+  # ne sont pas fonctionnels pour du SPNEGO ou de l'auth Kerberos.

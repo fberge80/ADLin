@@ -1,0 +1,102 @@
+---
+# playbooks/00b-pbx-enroll.yml
+#
+# Enrollment de pbx01 (Debian 12) comme client FreeIPA.
+#
+# Contexte :
+#   pbx01 est le seul host Debian 12 du projet ADLin. Il est exclu du
+#   groupe `rocky_hosts` et donc de `00-common.yml` (enrollment Rocky
+#   Linux uniquement). L'enrollment IPA de pbx01 est nécessaire AVANT
+#   la Phase 2 (reverse proxy) car le certificat TLS multi-SAN exige
+#   un service principal HTTP/pbx01.adlin.lab dans FreeIPA — et la
+#   création d'un service principal impose un host enrollé.
+#
+#   Sans ce playbook, `02-reverse-proxy.yml` échoue avec :
+#     "The host 'pbx01.adlin.lab' does not exist to add a service to."
+#
+#   Ce playbook extrait l'enrollment de `roles/freepbx` pour le rendre
+#   disponible plus tôt dans le pipeline. La Phase 4b (FreePBX/Asterisk)
+#   n'aura plus qu'à déployer le service applicatif par-dessus.
+#
+# Position dans le pipeline :
+#   Phase 1b (01-freeipa-server.yml)  → FreeIPA opérationnel
+#   Phase 1c (00b-pbx-enroll.yml)      → CE PLAYBOOK — enrollment pbx01
+#   Phase 2  (02-reverse-proxy.yml)    → Reverse proxy + cert multi-SAN
+#
+# Utilisation :
+#   ansible-playbook playbooks/00b-pbx-enroll.yml  --vault-password-file .vault_pass
+#   make deploy-pbx-enroll
+#
+# Tags disponibles : pbx, ipa, enroll, freeipa
+
+- name: "Enrollment IPA — pbx01 (Debian 12)"
+  hosts: pbx
+  become: true
+
+  pre_tasks:
+    - name: "Pbx_enroll | Configurer le DNS FreeIPA"
+      ansible.builtin.copy:
+        content: |
+          nameserver 10.10.10.10
+          search adlin.lab
+        dest: /etc/resolv.conf
+        owner: root
+        group: root
+        mode: "0644"
+      changed_when: true
+
+    - name: "Pbx_enroll | Vérifier que le serveur IPA est joignable"
+      ansible.builtin.command: "getent hosts {{ ipa_server }}"
+      register: pbx_enroll_dns
+      changed_when: false
+      failed_when: pbx_enroll_dns.rc != 0
+
+    - name: "Pbx_enroll | Résolution DNS confirmée"
+      ansible.builtin.debug:
+        msg: "FreeIPA server {{ ipa_server }} resolved to {{ pbx_enroll_dns.stdout }}"
+
+  tasks:
+    - name: "Pbx_enroll | Rafraîchir le cache apt (Debian 12)"
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+        # Nécessaire avant d'installer freeipa-client car le cache
+        # local peut pointer sur des versions de paquets périmées
+
+    - name: "Pbx_enroll | Installer freeipa-client (paquet Debian)"
+      ansible.builtin.apt:
+        name: freeipa-client
+        state: present
+
+    - name: "Pbx_enroll | Vérifier si pbx01 est déjà enrollé"
+      ansible.builtin.stat:
+        path: /etc/ipa/default.conf
+      register: pbx_enroll_check
+
+    - name: "Pbx_enroll | Enroller pbx01 comme client IPA"
+      ansible.builtin.command: >
+        ipa-client-install
+          --domain {{ ipa_domain }}
+          --server {{ ipa_server }}
+          --realm {{ ipa_realm }}
+          --principal admin
+          --password {{ ipa_admin_password }}
+          --mkhomedir
+          --unattended
+      when: not pbx_enroll_check.stat.exists
+      no_log: true
+      changed_when: true
+      register: pbx_enroll_result
+      failed_when: >
+        pbx_enroll_result.rc != 0 and
+        "already enrolled" not in pbx_enroll_result.stderr
+
+    - name: "Pbx_enroll | Vérifier le keytab Kerberos"
+      ansible.builtin.command: klist -k /etc/krb5.keytab
+      register: pbx_enroll_keytab
+      changed_when: false
+      failed_when: pbx_enroll_keytab.rc != 0
+
+    - name: "Pbx_enroll | Enrollment terminé"
+      ansible.builtin.debug:
+        msg: "pbx01 (Debian 12) enrollé comme client FreeIPA — prêt pour le cert multi-SAN"

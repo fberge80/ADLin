@@ -4,6 +4,11 @@
 # Rocky 9 AppStream = PHP 8.1. Nextcloud 33 exige PHP ≥ 8.2.
 # Remi est le dépôt de référence pour PHP récent sur RHEL/Rocky.
 
+- name: "install | Importer la clé GPG Remi"
+  ansible.builtin.rpm_key:
+    key: https://rpms.remirepo.net/RPM-GPG-KEY-remi2021
+    state: present
+
 - name: "install | Installer le dépôt Remi"
   ansible.builtin.dnf:
     name: "{{ nextcloud_remi_repo_url }}"
@@ -31,8 +36,10 @@
       - php-opcache
       - php-bcmath
       - php-gmp
+      - php-process
       - php-pecl-imagick
       - bzip2
+      - tar
       - certmonger
       - mariadb-server
       - python3-PyMySQL

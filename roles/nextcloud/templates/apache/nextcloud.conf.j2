@@ -3,8 +3,7 @@
 # HTTPS uniquement : le port 80 est géré par proxy01 (redirection → HTTPS)
 
 <VirtualHost *:443>
-    ServerName  {{ nextcloud_fqdn_public }}
-    ServerAlias {{ nextcloud_hostname }}
+    ServerName  {{ nextcloud_hostname }}
     DocumentRoot {{ nextcloud_webroot }}
 
     # Requis pour WebDAV/CalDAV/CardDAV — AllowOverride ne peut pas surcharger cette directive

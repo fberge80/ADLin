@@ -1,63 +1,173 @@
 ---
 # roles/reverse_proxy/tasks/certmonger.yml
 #
-# Demande un certificat TLS multi-SAN via certmonger et la CA FreeIPA (Dogtag).
+# Obtient un certificat TLS multi-SAN signé par le CA FreeIPA (Dogtag).
 #
-# Flux de délivrance :
-#   1. ipa-getcert request  → certmonger soumet la CSR à Dogtag via IPA API
-#   2. Dogtag signe le certificat (30-60s selon charge)
-#   3. certmonger écrit le cert+clé dans les fichiers PEM spécifiés
-#   4. certmonger passe en état MONITORING — il renouvellera automatiquement
-#      30 jours avant expiration
+# Pourquoi ce flux (CSR openssl + ipa cert-request) ?
+#   Le keytab machine de proxy01 (host/proxy01) n'a pas le droit LDAP
+#   d'écrire usercertificate sur les hôtes des SANs (cloud01, mail01, etc.).
+#   Certmonger local échoue avec erreur 2100 "Insufficient privilege".
 #
-# Idempotence : on vérifie si le chemin du cert est déjà suivi par certmonger
-# avant de soumettre une nouvelle demande.
+#   La solution : générer le CSR sur proxy01 (openssl) et le faire signer
+#   sur ipa01 par l'admin via `ipa cert-request` avec un profil Dogtag
+#   dédié `caIPAMultiSANCert` (clone de caIPAServiceCert, créé par
+#   ipa_profile.yml).
+#
+# Flux :
+#   1. Vérifier expiration du cert existant (> 30 jours restants = skip)
+#   2. Générer clé privée + CSR sur proxy01 (openssl + addext SAN)
+#   3. Récupérer le CSR sur le control node
+#   4. Déléguer ipa cert-request sur ipa01 (admin)
+#   5. Distribuer le certificat PEM sur proxy01 + reload nginx
+#   6. Nettoyer les fichiers temporaires
+#
+# Idempotence : on vérifie la date d'expiration du cert existant avant de
+# régénérer. Le renouvellement courant se fait en relançant ce playbook.
 
-- name: "certmonger | Vérifier les certificats déjà suivis"
-  ansible.builtin.command: getcert list
-  register: reverse_proxy_getcert_list
+# ── 1. Vérifier si le certificat existant est valide (> 30 jours restants) ──
+
+- name: "certmonger | Vérifier l'expiration du certificat existant"
+  ansible.builtin.shell: |
+    set -euo pipefail
+    if [ ! -f {{ reverse_proxy_cert_path }} ]; then
+      echo "ABSENT"
+    else
+      expiry=$(openssl x509 -enddate -noout -in {{ reverse_proxy_cert_path }} \
+               | cut -d= -f2)
+      expiry_epoch=$(date -d "$expiry" +%s)
+      now_epoch=$(date +%s)
+      days_left=$(( (expiry_epoch - now_epoch) / 86400 ))
+      if [ "$days_left" -lt 30 ]; then
+        echo "EXPIRING_IN_${days_left}_DAYS"
+      else
+        echo "VALID_${days_left}_DAYS"
+      fi
+    fi
+  register: reverse_proxy_cert_status_check
   changed_when: false
 
-- name: "certmonger | Vérifier que reverse_proxy_vhosts est défini"
-  ansible.builtin.assert:
-    that:
-      - reverse_proxy_vhosts is defined
-      - reverse_proxy_vhosts | length > 0
-    fail_msg: "reverse_proxy_vhosts n'est pas défini ou est vide. Veuillez vérifier la configuration."
+- name: "certmonger | Afficher le statut du certificat"
+  ansible.builtin.debug:
+    msg: "Certificat proxy01 : {{ reverse_proxy_cert_status_check.stdout }}"
+
+- name: "certmonger | Définir si le certificat doit être (re)généré"
+  ansible.builtin.set_fact:
+    reverse_proxy_cert_needed: >-
+      {{ 'ABSENT' in reverse_proxy_cert_status_check.stdout
+         or 'EXPIRING' in reverse_proxy_cert_status_check.stdout }}
+
+# ── 2. Construire la liste des SANs ──────────────────────────────────────────
 
 - name: "certmonger | Construire la liste des SANs (Subject Alternative Names)"
   ansible.builtin.set_fact:
-    reverse_proxy_san_args: >-
-      {{ reverse_proxy_vhosts
-         | map(attribute='fqdn')
-         | map('regex_replace', '^(.*)$', '-D \1')
-         | join(' ') }}
-  # Résultat : "-D cloud.adlin.lab -D mail.adlin.lab -D erp.adlin.lab ..."
-  # Chaque SAN permet à nginx d'utiliser ce cert pour le vhost correspondant
+    reverse_proxy_san_list: >-
+      {{ [reverse_proxy_hostname]
+         + (reverse_proxy_vhosts | map(attribute='fqdn') | list) }}
+  # Résultat : ["proxy01.adlin.lab", "cloud01.adlin.lab", "mail01.adlin.lab", ...]
 
-- name: "certmonger | Demander le certificat TLS multi-SAN à FreeIPA CA"
-  ansible.builtin.shell: >
-    ipa-getcert request
-    -f {{ reverse_proxy_cert_path }}
-    -k {{ reverse_proxy_key_path }}
-    -K HTTP/{{ reverse_proxy_hostname }}@{{ ipa_realm }}
-    -N "CN={{ reverse_proxy_hostname }}"
-    {{ reverse_proxy_san_args }}
-  when: reverse_proxy_cert_path not in reverse_proxy_getcert_list.stdout
+- name: "certmonger | Construire l'extension SAN pour OpenSSL"
+  ansible.builtin.set_fact:
+    reverse_proxy_san_openssl: >-
+      {{ reverse_proxy_san_list
+         | map('regex_replace', '^(.*)$', 'DNS:\1')
+         | join(',') }}
+  # Résultat : "DNS:proxy01.adlin.lab,DNS:cloud01.adlin.lab,..."
+
+# ── 3. Générer clé privée + CSR sur proxy01 ──────────────────────────────────
+
+- name: "certmonger | Générer la clé privée et le CSR sur proxy01"
+  ansible.builtin.shell: |
+    openssl req -new -newkey rsa:2048 -nodes \
+      -keyout {{ reverse_proxy_key_path }} \
+      -out /tmp/proxy01_multiSAN.csr \
+      -subj "/CN={{ reverse_proxy_hostname }}" \
+      -addext "subjectAltName={{ reverse_proxy_san_openssl }}" 2>/dev/null
+    chmod 640 {{ reverse_proxy_key_path }}
+  when: reverse_proxy_cert_needed | bool
   changed_when: true
-  # ipa-getcert utilise le keytab de la machine (/etc/krb5.keytab) pour
-  # s'authentifier auprès de FreeIPA — enrollment IPA client obligatoire
 
-- name: "certmonger | Attendre la délivrance du certificat par Dogtag"
-  ansible.builtin.command: getcert list -f {{ reverse_proxy_cert_path }}
-  register: reverse_proxy_cert_status
-  until: "'status: MONITORING' in reverse_proxy_cert_status.stdout"
-  retries: "{{ reverse_proxy_cert_wait_retries }}"
-  delay: "{{ reverse_proxy_cert_wait_delay }}"
+# ── 4. Récupérer le CSR sur le control node ──────────────────────────────────
+
+- name: "certmonger | Récupérer le CSR depuis proxy01"
+  ansible.builtin.fetch:
+    src: /tmp/proxy01_multiSAN.csr
+    dest: /tmp/proxy01_multiSAN.csr
+    flat: true
+  when: reverse_proxy_cert_needed | bool
+
+# ── 5. Signer le CSR sur ipa01 en tant qu'admin ──────────────────────────────
+
+- name: "certmonger | Envoyer le CSR sur ipa01"
+  ansible.builtin.copy:
+    src: /tmp/proxy01_multiSAN.csr
+    dest: /tmp/proxy01_multiSAN.csr
+    mode: "0644"
+  delegate_to: "{{ ipa_server }}"
+  when: reverse_proxy_cert_needed | bool
+
+- name: "certmonger | Signer le certificat multi-SAN via ipa cert-request (admin)"
+  ansible.builtin.shell: |
+    set -euo pipefail
+    echo "{{ ipa_admin_password }}" | kinit admin 2>/dev/null
+    ipa cert-request /tmp/proxy01_multiSAN.csr \
+      --principal=HTTP/{{ reverse_proxy_hostname }} \
+      --profile-id=caIPAMultiSANCert \
+      --certificate-out=/tmp/proxy01_multiSAN.crt
+    kdestroy -A 2>/dev/null
+    echo "OK"
+  delegate_to: "{{ ipa_server }}"
+  register: reverse_proxy_cert_sign
+  when: reverse_proxy_cert_needed | bool
+  changed_when: "'OK' in reverse_proxy_cert_sign.stdout"
+  no_log: true
+
+# ── 6. Distribuer le certificat sur proxy01 ──────────────────────────────────
+
+- name: "certmonger | Récupérer le certificat signé depuis ipa01"
+  ansible.builtin.fetch:
+    src: /tmp/proxy01_multiSAN.crt
+    dest: /tmp/proxy01_multiSAN.crt
+    flat: true
+  delegate_to: "{{ ipa_server }}"
+  when: reverse_proxy_cert_needed | bool
+
+- name: "certmonger | Déployer le certificat sur proxy01"
+  ansible.builtin.copy:
+    src: /tmp/proxy01_multiSAN.crt
+    dest: "{{ reverse_proxy_cert_path }}"
+    mode: "0644"
+    owner: root
+    group: root
+  when: reverse_proxy_cert_needed | bool
+  notify: Recharger nginx
+
+# ── 7. Nettoyer les fichiers temporaires ─────────────────────────────────────
+
+- name: "certmonger | Nettoyer les fichiers temporaires (ipa01)"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/proxy01_multiSAN.csr
+    - /tmp/proxy01_multiSAN.crt
+  delegate_to: "{{ ipa_server }}"
+  when: reverse_proxy_cert_needed | bool
+
+- name: "certmonger | Nettoyer les fichiers temporaires (proxy01)"
+  ansible.builtin.file:
+    path: /tmp/proxy01_multiSAN.csr
+    state: absent
+  when: reverse_proxy_cert_needed | bool
+
+# ── 8. Vérification finale ───────────────────────────────────────────────────
+
+- name: "certmonger | Vérifier le certificat déployé"
+  ansible.builtin.shell: |
+    openssl x509 -noout -subject -enddate -ext subjectAltName \
+      -in {{ reverse_proxy_cert_path }} 2>/dev/null
+  register: reverse_proxy_cert_verify
   changed_when: false
-  # MONITORING = cert délivré et suivi pour renouvellement automatique
-  # Si l'état reste CA_UNREACHABLE ou NEED_GUIDANCE, voir : getcert list -v
 
-- name: "certmonger | Afficher l'état du certificat"
+- name: "certmonger | Afficher le certificat déployé"
   ansible.builtin.debug:
-    msg: "{{ reverse_proxy_cert_status.stdout_lines }}"
+    msg: "{{ reverse_proxy_cert_verify.stdout_lines }}"

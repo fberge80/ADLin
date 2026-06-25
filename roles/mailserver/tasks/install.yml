@@ -1,24 +1,18 @@
 ---
 # Dépôts tiers requis :
-#   - SOGo : paquets absents des dépôts EPEL/AppStream RHEL9
+#   - SOGo nightly : GNUstep (SOPE) + SOGo — seul dépôt public gratuit pour RHEL 9
+#     (production builds nécessitent un contrat de support Alinto/Inverse)
 #   - Rspamd : version récente absente des dépôts standard RHEL9
+#
+# Note : GPG désactivé pour SOGo nightly — pas de clé publique stable pour les nightly
+# builds. Le checksum sha256 du RPM est vérifié via les métadonnées du dépôt.
 
-- name: "install | Ajouter le dépôt SOGo GNUstep"
+- name: "install | Ajouter le dépôt SOGo (nightly, inclut GNUstep + SOGo)"
   ansible.builtin.yum_repository:
-    name: sogo-gnustep
-    description: "SOGo — GNUstep runtime (Rocky Linux 9)"
+    name: sogo-nightly
+    description: "SOGo nightly builds (Rocky Linux 9) — GNUstep + SOGo"
     baseurl: "{{ mailserver_sogo_gnustep_repo }}"
-    gpgcheck: true
-    gpgkey: https://packages.sogo.nu/sogo.key
-    enabled: true
-
-- name: "install | Ajouter le dépôt SOGo"
-  ansible.builtin.yum_repository:
-    name: sogo
-    description: "SOGo — webmail CalDAV CardDAV (Rocky Linux 9)"
-    baseurl: "{{ mailserver_sogo_repo }}"
-    gpgcheck: true
-    gpgkey: https://packages.sogo.nu/sogo.key
+    gpgcheck: false
     enabled: true
 
 - name: "install | Ajouter le dépôt Rspamd"

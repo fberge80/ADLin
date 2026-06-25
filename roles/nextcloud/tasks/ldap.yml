@@ -33,13 +33,20 @@
   changed_when: "'already exists' not in nextcloud_ldap_create.stderr"
   failed_when: nextcloud_ldap_create.rc != 0 and 'already exists' not in nextcloud_ldap_create.stderr
 
-# Extrait le préfixe de la sortie "Saved empty configuration for s01"
+# Extrait le préfixe de la sortie "Saved empty configuration for s01" (NC < 34)
+# ou "Created new configuration with configID s01" (NC 34+)
+# Note: stdout est vide si la config existe déjà → fallback sur 's01'
 - name: "ldap | Déterminer le préfixe de la config LDAP"
   ansible.builtin.set_fact:
     nextcloud_ldap_config_prefix: >-
-      {{ (nextcloud_ldap_create.stdout | regex_search('for (\\w+)$', '\\1'))
-         | first
-         | default('s01') }}
+      {{ nextcloud_ldap_create.stdout
+         | regex_replace('.*(?:for|configID)\\s+(\\S+).*', '\\1')
+         | default('s01', true) }}
+
+- name: "ldap | Vérifier que le préfixe LDAP est valide"
+  ansible.builtin.set_fact:
+    nextcloud_ldap_config_prefix: "s01"
+  when: nextcloud_ldap_config_prefix | length == 0 or nextcloud_ldap_config_prefix == nextcloud_ldap_create.stdout
 
 - name: "ldap | Afficher le préfixe LDAP actif"
   ansible.builtin.debug:

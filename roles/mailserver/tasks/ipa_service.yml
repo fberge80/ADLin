@@ -1,13 +1,26 @@
 ---
 # roles/mailserver/tasks/ipa_service.yml
 #
-# Crée le principal de service smtp/mail01.adlin.lab dans FreeIPA.
-# Nécessaire pour que certmonger puisse demander et renouveler automatiquement
-# le certificat TLS lié à ce principal (Postfix STARTTLS, Dovecot IMAPS).
+# Crée les principaux de service dans FreeIPA pour mail01.
+# Deux principaux sont nécessaires car le certificat TLS inclut deux SANs :
+#   - smtp/mail01.adlin.lab  → host IPA réel (porteur du certificat)
+#   - smtp/mail.adlin.lab    → FQDN public (skip_host_check)
+#
+# Note : la signature admin via ipa cert-request contourne les ACLs CA,
+# donc pas besoin de CA ACL ici (cf. certmonger.yml qui utilise l'admin).
 
-- name: "ipa_service | Créer le principal SMTP pour mail01"
+- name: "ipa_service | Créer le principal SMTP pour mail01 (host IPA)"
   freeipa.ansible_freeipa.ipaservice:
     ipaadmin_password: "{{ ipa_admin_password }}"
     name: "smtp/{{ mailserver_hostname }}"
+    state: present
+  delegate_to: ipa01.adlin.lab
+
+- name: "ipa_service | Créer le principal SMTP pour mail.adlin.lab (public FQDN)"
+  freeipa.ansible_freeipa.ipaservice:
+    ipaadmin_password: "{{ ipa_admin_password }}"
+    name: "smtp/mail.{{ mailserver_domain }}"
+    skip_host_check: true
+    force: true
     state: present
   delegate_to: ipa01.adlin.lab

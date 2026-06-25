@@ -57,6 +57,10 @@ mailserver_sogo_db_password: "{{ sogo_db_password }}"
 # Dépôts tiers — à vérifier avant déploiement
 # -----------------------------------------------------------------------------
 
-mailserver_sogo_gnustep_repo: "https://packages.sogo.nu/rhel/9/GNUstep/x86_64/"
-mailserver_sogo_repo:         "https://packages.sogo.nu/rhel/9/SOGo/x86_64/"
-mailserver_rspamd_repo:       "https://rspamd.com/rpm-stable/centos-9/"
+# Note: SOGo production builds nécessitent un contrat de support payant
+# (Alinto/Inverse). Les nightly builds sont publiquement disponibles sans
+# authentification et incluent GNUstep (SOPE) + SOGo dans un seul dépôt.
+mailserver_sogo_gnustep_repo: "https://packages.sogo.nu/nightly/5/rhel/9/$basearch/"
+# Désactivé : les nightly builds contiennent déjà SOGo + GNUstep
+# mailserver_sogo_repo:         "..."
+mailserver_rspamd_repo:       "https://rspamd.com/rpm-stable/centos-9/$basearch/"

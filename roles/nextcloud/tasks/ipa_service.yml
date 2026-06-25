@@ -4,10 +4,20 @@
 # Crée le principal HTTP/cloud01.adlin.lab dans FreeIPA.
 # Requis pour que certmonger puisse demander et renouveler le certificat TLS Apache.
 
-- name: "ipa_service | Créer le principal HTTP pour cloud01"
+- name: "ipa_service | Créer le principal HTTP pour cloud01 (VM interne)"
   freeipa.ansible_freeipa.ipaservice:
     ipaadmin_password: "{{ ipa_admin_password }}"
     name: "HTTP/{{ nextcloud_hostname }}"
+    state: present
+  delegate_to: ipa01.adlin.lab
+  no_log: true
+
+- name: "ipa_service | Créer le principal HTTP pour cloud.adlin.lab (public FQDN, pas de host IPA)"
+  freeipa.ansible_freeipa.ipaservice:
+    ipaadmin_password: "{{ ipa_admin_password }}"
+    name: "HTTP/{{ nextcloud_fqdn_public }}"
+    skip_host_check: true
+    force: true
     state: present
   delegate_to: ipa01.adlin.lab
   no_log: true

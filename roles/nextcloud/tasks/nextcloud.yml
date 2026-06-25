@@ -28,6 +28,15 @@
     path: "{{ nextcloud_webroot }}/config/config.php"
   register: nextcloud_config_php
 
+- name: "nextcloud | Créer le répertoire temporaire Ansible pour apache"
+  ansible.builtin.file:
+    path: /usr/share/httpd/.ansible/tmp
+    state: directory
+    owner: apache
+    group: apache
+    mode: "0700"
+  when: not nextcloud_config_php.stat.exists
+
 - name: "nextcloud | Lancer occ maintenance:install"
   ansible.builtin.command:
     cmd: >
@@ -46,20 +55,11 @@
   changed_when: true
   no_log: true
 
-- name: "nextcloud | Configurer trusted_domain public ({{ nextcloud_fqdn_public }})"
+- name: "nextcloud | Configurer trusted_domain ({{ nextcloud_hostname }})"
   ansible.builtin.command:
     cmd: >
       php {{ nextcloud_webroot }}/occ config:system:set
-      trusted_domains 0 --value={{ nextcloud_fqdn_public }}
-  become: true
-  become_user: apache
-  changed_when: false
-
-- name: "nextcloud | Configurer trusted_domain interne ({{ nextcloud_hostname }})"
-  ansible.builtin.command:
-    cmd: >
-      php {{ nextcloud_webroot }}/occ config:system:set
-      trusted_domains 1 --value={{ nextcloud_hostname }}
+      trusted_domains 0 --value={{ nextcloud_hostname }}
   become: true
   become_user: apache
   changed_when: false

@@ -17,7 +17,7 @@ LIMIT_OPT := $(if $(LIMIT),--limit $(LIMIT))
 # Vérification que .vault_pass existe avant toute commande qui en a besoin
 VAULT_OPTS := --vault-password-file $(VAULT_FILE)
 
-.PHONY: help check-vault check-collections lint ping deploy-common deploy-freeipa deploy-proxy \
+.PHONY: help check-vault check-collections lint ping deploy-common deploy-freeipa deploy-pbx-enroll deploy-proxy \
         deploy-nextcloud deploy-mail deploy-rocketchat deploy-odoo \
         deploy-freepbx deploy-all verify
 
@@ -30,6 +30,7 @@ help:
 	@echo ""
 	@echo "  make deploy-common       Phase 1a, hardening OS toutes VM"
 	@echo "  make deploy-freeipa      Phase 1b, FreeIPA Server sur ipa01"
+	@echo "  make deploy-pbx-enroll   Phase 1c, enrollment IPA pbx01 (Debian 12)"
 	@echo "  make deploy-proxy        Phase 2,  reverse proxy sur proxy01"
 	@echo "  make deploy-nextcloud    Phase 3a, Nextcloud sur cloud01"
 	@echo "  make deploy-mail         Phase 3b, mail stack sur mail01"
@@ -76,6 +77,9 @@ deploy-common: check-vault
 
 deploy-freeipa: check-vault
 	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) $(PLAYBOOK_DIR)/01-freeipa-server.yml $(VAULT_OPTS) $(LIMIT_OPT)
+
+deploy-pbx-enroll: check-vault
+	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) $(PLAYBOOK_DIR)/00b-pbx-enroll.yml $(VAULT_OPTS) $(LIMIT_OPT)
 
 deploy-proxy: check-vault
 	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) $(PLAYBOOK_DIR)/02-reverse-proxy.yml $(VAULT_OPTS) $(LIMIT_OPT)

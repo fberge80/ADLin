@@ -2,24 +2,20 @@
 # roles/reverse_proxy/tasks/install.yml
 #
 # Nginx est dans les dépôts AppStream de Rocky Linux 9.
-# certmonger est natif RHEL — fait partie de l'écosystème FreeIPA client.
+#
+# Note : certmonger n'est PAS installé ici. La signature du certificat
+# multi-SAN est faite en déléguant `ipa cert-request` sur ipa01 (admin),
+# pas via certmonger local. Voir tasks/certmonger.yml.
 
-- name: "install | Installer nginx et certmonger"
+- name: "install | Installer nginx"
   ansible.builtin.dnf:
     name:
       - nginx
-      - certmonger    # daemon de gestion des certificats FreeIPA
     state: present
 
 - name: "install | Démarrer et activer nginx"
   ansible.builtin.systemd:
     name: nginx
-    state: started
-    enabled: true
-
-- name: "install | Démarrer et activer certmonger"
-  ansible.builtin.systemd:
-    name: certmonger
     state: started
     enabled: true
 
