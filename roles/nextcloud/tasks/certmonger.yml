@@ -12,7 +12,7 @@
 
 - name: "certmonger | Nettoyer l'ancienne requête bloquée et les fichiers cert/key"
   ansible.builtin.shell: |
-    set +e
+    set -o pipefail
     REQUEST_ID=$(getcert list 2>/dev/null \
       | grep -B5 '{{ nextcloud_cert_path }}' \
       | grep 'Request ID' | head -1 | awk '{print $NF}' | tr -d "'")
@@ -34,13 +34,14 @@
   failed_when: false
 
 - name: "certmonger | Demander le certificat TLS à FreeIPA CA"
-  ansible.builtin.shell: >-
-    ipa-getcert request
-    -f {{ nextcloud_cert_path }}
-    -k {{ nextcloud_key_path }}
-    -K HTTP/{{ nextcloud_hostname }}@{{ ipa_realm }}
-    -N "CN={{ nextcloud_hostname }}"
-    -D {{ nextcloud_hostname }}
+  ansible.builtin.command:
+    cmd: >-
+      ipa-getcert request
+      -f {{ nextcloud_cert_path }}
+      -k {{ nextcloud_key_path }}
+      -K HTTP/{{ nextcloud_hostname }}@{{ ipa_realm }}
+      -N "CN={{ nextcloud_hostname }}"
+      -D {{ nextcloud_hostname }}
   when: (nextcloud_cert_path not in nextcloud_getcert_list.stdout) or nextcloud_getcert_list.stdout is search('(CA_UNREACHABLE|CA_REJECTED)')
   changed_when: true
 

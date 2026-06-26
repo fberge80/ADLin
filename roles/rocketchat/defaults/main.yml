@@ -3,7 +3,7 @@
 
 rocketchat_hostname:    "chat01.adlin.lab"
 rocketchat_fqdn_public: "chat.adlin.lab"
-rocketchat_version:     "8"
+rocketchat_version:     "8.5.1"
 
 # MongoDB — version compatible RC 8.x
 rocketchat_mongo_version: "7.0"
