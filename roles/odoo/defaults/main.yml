@@ -1,30 +1,29 @@
 ---
 # roles/odoo/defaults/main.yml
 
-odoo_hostname:    "erp01.adlin.lab"
-odoo_fqdn_public: "erp.adlin.lab"
-odoo_version:     "19.0"
+odoo_hostname:            "erp01.adlin.lab"
+odoo_fqdn_public:         "erp.adlin.lab"
+odoo_version:             "19.0"
+odoo_postgres_version:    "16"
 
-# Dépôt nightly officiel Odoo (RPM)
-odoo_repo_url: "https://nightly.odoo.com/{{ odoo_version }}/nightly/rpm/"
-
-# PostgreSQL — peer authentication (pas de mot de passe)
-# L'utilisateur système odoo = rôle PostgreSQL odoo
-odoo_db_name: "odoo"
-odoo_db_user: "odoo"
+# Ports — TLS terminé par proxy01
+odoo_port:               8069
+odoo_longpolling_port:   8072
 
 # Workers multi-process (dimensionnement pour 2 vCPUs)
-odoo_workers:          4
-odoo_max_cron_threads: 2
-odoo_longpolling_port: 8072
+odoo_workers:            4
+odoo_max_cron_threads:   2
+
+# PostgreSQL (dans le conteneur, pas sur l'hôte)
+odoo_db_name:            "odoo"
+odoo_db_user:            "odoo"
+odoo_db_password:        "{{ vault_odoo_db_password }}"
 
 # Chemins
-odoo_config_file: "/etc/odoo/odoo.conf"
-odoo_log_file:    "/var/log/odoo/odoo.log"
-odoo_data_dir:    "/var/lib/odoo"
+odoo_data_dir:           "/opt/odoo"
 
-# LDAP — svc_odoo (ldap_bind_password_odoo défini dans group_vars/all/vars.yml)
-odoo_ldap_bind_dn:   "uid=svc_odoo,cn=sysaccounts,cn=etc,{{ freeipa_base_dn }}"
-odoo_ldap_bind_pass: "{{ ldap_bind_password_odoo }}"
-odoo_ldap_base:      "{{ freeipa_base_dn }}"
-odoo_ldap_filter:    "(memberOf=cn=odoo_users,cn=groups,cn=accounts,{{ freeipa_base_dn }})"
+# LDAP — configuré manuellement après déploiement (pas en auto via env vars officiels Odoo)
+odoo_ldap_bind_dn:       "uid=svc_odoo,cn=sysaccounts,cn=etc,{{ freeipa_base_dn }}"
+odoo_ldap_bind_pass:     "{{ ldap_bind_password_odoo }}"
+odoo_ldap_base:          "{{ freeipa_base_dn }}"
+odoo_ldap_filter:        "(memberOf=cn=odoo_users,cn=groups,cn=accounts,{{ freeipa_base_dn }})"

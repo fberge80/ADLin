@@ -1,18 +1,17 @@
 ---
 # 8069/tcp — UI Odoo + API XML-RPC/JSON-RPC (depuis proxy01 uniquement)
 # 8072/tcp — workers longpolling (depuis proxy01 uniquement)
-# Le trafic entrant provient exclusivement de proxy01 (réseau interne).
 
-- name: "firewalld | Autoriser Odoo UI (8069/tcp)"
+- name: "firewalld | Autoriser Odoo UI (8069/tcp) pour proxy01"
   ansible.posix.firewalld:
-    port: 8069/tcp
+    rich_rule: "rule family='ipv4' source address='10.10.10.100' port port='8069' protocol='tcp' accept"
     permanent: true
     state: enabled
     immediate: true
 
-- name: "firewalld | Autoriser Odoo longpolling (8072/tcp)"
+- name: "firewalld | Autoriser Odoo longpolling (8072/tcp) pour proxy01"
   ansible.posix.firewalld:
-    port: 8072/tcp
+    rich_rule: "rule family='ipv4' source address='10.10.10.100' port port='8072' protocol='tcp' accept"
     permanent: true
     state: enabled
     immediate: true

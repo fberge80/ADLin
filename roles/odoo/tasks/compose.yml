@@ -1,0 +1,63 @@
+---
+# roles/odoo/tasks/compose.yml
+#
+# Déploie docker-compose.yml et démarre le stack Odoo 19 CE.
+
+- name: "compose | Déployer docker-compose.yml depuis le template"
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ odoo_data_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0640"
+  notify: Redémarrer odoo
+
+- name: "compose | Créer les répertoires de données persistantes"
+  ansible.builtin.file:
+    path: "{{ odoo_data_dir }}/{{ item }}"
+    state: directory
+    owner: "100"
+    group: "101"
+    mode: "0750"
+    setype: svirt_sandbox_file_t
+  loop:
+    - pgdata
+    - extra-addons
+    - filestore
+    - config
+    - logs
+
+- name: "compose | Déployer odoo.conf dans le répertoire de config"
+  ansible.builtin.template:
+    src: odoo.conf.j2
+    dest: "{{ odoo_data_dir }}/config/odoo.conf"
+    owner: "100"
+    group: "101"
+    mode: "0644"
+  notify: Redémarrer odoo
+
+- name: "compose | Nettoyer les volumes Docker corrompus avant démarrage"
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      docker compose down -v --remove-orphans 2>/dev/null || true
+      rm -rf pgdata
+      mkdir -p pgdata
+      chown 100:101 pgdata
+      chcon -Rt svirt_sandbox_file_t pgdata config filestore logs extra-addons 2>/dev/null || true
+    chdir: "{{ odoo_data_dir }}"
+  changed_when: false
+
+- name: "compose | Démarrer le stack Odoo (docker compose up)"
+  ansible.builtin.command:
+    cmd: docker compose up -d --remove-orphans
+    chdir: "{{ odoo_data_dir }}"
+  register: odoo_compose_up
+  changed_when: "'Started' in odoo_compose_up.stdout or 'Created' in odoo_compose_up.stdout"
+
+- name: "compose | Attendre que Odoo réponde sur les ports"
+  ansible.builtin.wait_for:
+    host: "127.0.0.1"
+    port: "{{ odoo_port }}"
+    timeout: 180
+    delay: 15

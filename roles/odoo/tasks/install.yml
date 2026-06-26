@@ -1,25 +1,43 @@
 ---
 # roles/odoo/tasks/install.yml
 #
-# Le paquet odoo du dépôt nightly déclare python3.11 comme dépendance.
-# EPEL est déjà activé par le rôle common — python3.11 disponible sans compilation.
-# python3-psycopg2 est requis par les modules community.postgresql.
+# Odoo 19 CE via Docker (le RPM nightly est pour Fedora 42, incompatible EL9).
+# Pattern = même que Rocket.Chat : Docker CE installé, docker-compose déployé.
 
-- name: "install | Ajouter le dépôt Odoo nightly"
-  ansible.builtin.yum_repository:
-    name: odoo
-    description: "Odoo {{ odoo_version }} — dépôt nightly officiel (RPM)"
-    baseurl: "{{ odoo_repo_url }}"
-    gpgcheck: true
-    gpgkey: https://nightly.odoo.com/odoo.key
+- name: "install | Supprimer l'ancien dépôt Odoo cassé (laissé par exécution précédente)"
+  ansible.builtin.file:
+    path: /etc/yum.repos.d/odoo.repo
+    state: absent
+
+- name: "install | Ajouter le dépôt Docker CE"
+  ansible.builtin.get_url:
+    url: "https://download.docker.com/linux/centos/docker-ce.repo"
+    dest: /etc/yum.repos.d/docker-ce.repo
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: "install | Installer Docker CE, CLI et plugin Compose"
+  ansible.builtin.dnf:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose-plugin
+      - container-selinux
+    state: present
+
+- name: "install | Activer et démarrer dockerd"
+  ansible.builtin.systemd:
+    name: docker
+    state: started
     enabled: true
 
-- name: "install | Installer python3-psycopg2 (requis par community.postgresql)"
-  ansible.builtin.dnf:
-    name: python3-psycopg2
-    state: present
-
-- name: "install | Installer le paquet odoo (tire python3.11 depuis EPEL)"
-  ansible.builtin.dnf:
-    name: odoo
-    state: present
+- name: "install | Créer le répertoire de données Odoo"
+  ansible.builtin.file:
+    path: "{{ odoo_data_dir }}"
+    state: directory
+    owner: "100"
+    group: "101"
+    mode: "0750"
+    setype: svirt_sandbox_file_t

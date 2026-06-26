@@ -75,7 +75,7 @@
   tasks:
     - name: "Verify | Nextcloud — occ status"
       ansible.builtin.command: >
-        sudo -u apache php /var/www/html/nextcloud/occ status --output=json
+        sudo -u apache php /var/www/nextcloud/occ status --output=json
       register: nc_status
       changed_when: false
       failed_when: >

@@ -2,7 +2,7 @@
 galaxy_info:
   role_name: odoo
   author: "Frédéric"
-  description: "Déploie Odoo 19 CE sur Rocky Linux 9 avec PostgreSQL et auth_ldap FreeIPA"
+  description: "Déploie Odoo 19 CE via Docker sur Rocky Linux 9 avec PostgreSQL et auth_ldap FreeIPA"
   license: "MIT"
   min_ansible_version: "2.15"
   platforms:

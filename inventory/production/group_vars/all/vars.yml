@@ -65,8 +65,7 @@ verify_systemd_services:
     - chronyd
     - firewalld
   erp01.adlin.lab:
-    - odoo
-    - postgresql
+    - docker
     - chronyd
     - firewalld
   chat01.adlin.lab:
@@ -81,3 +80,4 @@ ldap_bind_password_rocketchat: "{{ vault_ldap_bind_password_rocketchat }}"
 rocketchat_admin_password: "{{ vault_rocketchat_admin_password }}"
 nextcloud_db_password: "{{ vault_nextcloud_db_password }}"
 nextcloud_admin_password: "{{ vault_nextcloud_admin_password }}"
+odoo_db_password: "{{ vault_odoo_db_password }}"

@@ -1,24 +1,29 @@
 ---
-- name: "Odoo | Installation dépôt nightly et paquets"
+- name: "Odoo | Installation Docker CE"
   ansible.builtin.import_tasks: install.yml
-  tags: [odoo, install]
+  tags: [odoo, install, docker]
 
-- name: "Odoo | Base de données PostgreSQL"
-  ansible.builtin.import_tasks: database.yml
-  tags: [odoo, database, postgresql]
-
-- name: "Odoo | Configuration odoo.conf"
-  ansible.builtin.import_tasks: config.yml
-  tags: [odoo, config]
-
-- name: "Odoo | Initialisation base + activation auth_ldap"
-  ansible.builtin.import_tasks: init.yml
-  tags: [odoo, init, ldap]
-
-- name: "Odoo | Contextes SELinux"
+- name: "Odoo | Contextes SELinux (avant Docker compose)"
   ansible.builtin.import_tasks: selinux.yml
   tags: [odoo, selinux]
+
+- name: "Odoo | Déploiement docker-compose Odoo + PostgreSQL"
+  ansible.builtin.import_tasks: compose.yml
+  tags: [odoo, compose]
 
 - name: "Odoo | Règles firewalld"
   ansible.builtin.import_tasks: firewalld.yml
   tags: [odoo, firewalld]
+
+- name: "Odoo | Instructions LDAP post-déploiement"
+  ansible.builtin.debug:
+    msg:
+      - "Odoo 19 CE déployé sur https://{{ odoo_fqdn_public }}"
+      - "Configurer LDAP manuellement : Settings → General Settings → LDAP Authentication"
+      - "  LDAP Server address : ldaps://ipa01.adlin.lab"
+      - "  LDAP server port    : 636"
+      - "  Use TLS             : Yes"
+      - "  LDAP binddn         : {{ odoo_ldap_bind_dn }}"
+      - "  LDAP base           : {{ odoo_ldap_base }}"
+      - "  LDAP filter         : {{ odoo_ldap_filter }}"
+  tags: [odoo, ldap]

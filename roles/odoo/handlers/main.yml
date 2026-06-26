@@ -1,5 +1,6 @@
 ---
 - name: Redémarrer odoo
-  ansible.builtin.systemd:
-    name: odoo
-    state: restarted
+  ansible.builtin.command:
+    cmd: docker compose restart
+    chdir: "{{ odoo_data_dir }}"
+  changed_when: true

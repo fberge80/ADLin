@@ -1,0 +1,40 @@
+---
+# Généré par Ansible — ne pas modifier manuellement
+# roles/odoo/templates/docker-compose.yml.j2
+services:
+
+  db:
+    image: docker.io/library/postgres:{{ odoo_postgres_version }}
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "{{ odoo_db_user }}"
+      POSTGRES_PASSWORD: "{{ odoo_db_password }}"
+      POSTGRES_DB: "{{ odoo_db_name }}"
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data:z
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U {{ odoo_db_user }} -d {{ odoo_db_name }}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  odoo:
+    image: docker.io/library/odoo:{{ odoo_version }}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "{{ odoo_port }}:8069"
+      - "{{ odoo_longpolling_port }}:8072"
+    volumes:
+      - ./config:/etc/odoo:z
+      - ./extra-addons:/mnt/extra-addons:z
+      - ./filestore:/var/lib/odoo:z
+      - ./logs:/var/log/odoo:z
+    environment:
+      HOST: db
+      USER: "{{ odoo_db_user }}"
+      PASSWORD: "{{ odoo_db_password }}"
+      ODOO_RC: /etc/odoo/odoo.conf

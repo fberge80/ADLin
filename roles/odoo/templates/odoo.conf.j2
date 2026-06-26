@@ -1,25 +1,26 @@
-; {{ ansible_managed }}
-; Configuration Odoo 19 CE — erp01.adlin.lab
-; Déployé dans {{ odoo_config_file }}
+# {{ ansible_managed }}
+# Configuration Odoo 19 CE — erp01.adlin.lab
+# Monté dans le conteneur via docker-compose.yml
 
 [options]
-; Connexion PostgreSQL via socket Unix (peer auth — pas de mot de passe)
-db_host          = False
-db_port          = False
+# Connexion PostgreSQL — le conteneur s'appelle "db" en réseau Docker
+db_host          = db
+db_port          = 5432
 db_user          = {{ odoo_db_user }}
+db_password      = {{ odoo_db_password }}
 db_name          = {{ odoo_db_name }}
 
-; Workers multi-process
-; Sans workers > 0, le port longpolling n'existe pas et /longpolling échoue
+# Workers multi-process
 workers          = {{ odoo_workers }}
 max_cron_threads = {{ odoo_max_cron_threads }}
-longpolling_port = {{ odoo_longpolling_port }}
 
-; Indispensable derrière nginx — lit X-Forwarded-Proto pour générer des URLs HTTPS
-; Sans proxy_mode = True, Odoo génère des redirections vers http:// au lieu de https://
+# Indispensable derrière nginx — lit X-Forwarded-Proto
 proxy_mode       = True
 
-; Données et logs
-data_dir         = {{ odoo_data_dir }}
-logfile          = {{ odoo_log_file }}
+# Données et logs (chemins internes au conteneur)
+data_dir         = /var/lib/odoo
+logfile          = /var/log/odoo/odoo.log
 log_level        = info
+
+# Pas de données de démo
+without_demo     = True

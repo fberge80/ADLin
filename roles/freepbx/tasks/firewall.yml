@@ -2,40 +2,43 @@
 # roles/freepbx/tasks/firewall.yml
 # pbx01 tourne sur Debian 12 — pas de firewalld, utilisation de ufw.
 
+- name: "firewall | Installer ufw (non installé par défaut sur Debian minimal)"
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+
 - name: "firewall | Activer ufw"
-  community.general.ufw:
-    state: enabled
-    policy: deny
+  ansible.builtin.command:
+    cmd: ufw --force enable
+  changed_when: true
+  # community.general.ufw module ne trouve pas /usr/sbin/ufw sur Debian 12
+
+- name: "firewall | Politique par défaut : deny incoming"
+  ansible.builtin.command:
+    cmd: ufw default deny incoming
+  changed_when: true
 
 - name: "firewall | Autoriser SSH (éviter le verrouillage)"
-  community.general.ufw:
-    rule: allow
-    port: "22"
-    proto: tcp
+  ansible.builtin.command:
+    cmd: ufw allow 22/tcp
+  changed_when: true
 
 - name: "firewall | Autoriser HTTP FreePBX admin depuis proxy01"
-  community.general.ufw:
-    rule: allow
-    port: "80"
-    proto: tcp
-    src: "10.10.10.11"
+  ansible.builtin.command:
+    cmd: ufw allow proto tcp from 10.10.10.100 to any port 80
+  changed_when: true
 
 - name: "firewall | Autoriser SIP UDP depuis proxy01"
-  community.general.ufw:
-    rule: allow
-    port: "5060"
-    proto: udp
-    src: "10.10.10.11"
+  ansible.builtin.command:
+    cmd: ufw allow proto udp from 10.10.10.100 to any port 5060
+  changed_when: true
 
 - name: "firewall | Autoriser SIP TLS depuis proxy01"
-  community.general.ufw:
-    rule: allow
-    port: "5061"
-    proto: tcp
-    src: "10.10.10.11"
+  ansible.builtin.command:
+    cmd: ufw allow proto tcp from 10.10.10.100 to any port 5061
+  changed_when: true
 
 - name: "firewall | Autoriser RTP (flux audio)"
-  community.general.ufw:
-    rule: allow
-    port: "10000:20000"
-    proto: udp
+  ansible.builtin.command:
+    cmd: ufw allow proto udp from 10.10.10.100 to any port 10000:20000
+  changed_when: true
