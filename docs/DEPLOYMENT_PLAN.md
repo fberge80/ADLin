@@ -117,7 +117,7 @@ Rôles  : common → freeipa_server
 > comme client IPA en premier.
 
 ```
-VM     : proxy01.adlin.lab — 10.10.10.11
+VM     : proxy01.adlin.lab — 10.10.10.100
 OS     : Rocky Linux 9
 vCPUs  : 1 · RAM : 512 Mo · Disque : 10 Go
 Rôles  : common (avec ipa_enroll: true) → reverse_proxy

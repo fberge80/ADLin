@@ -17,7 +17,8 @@ odoo_max_cron_threads:   2
 # PostgreSQL (dans le conteneur, pas sur l'hôte)
 odoo_db_name:            "odoo"
 odoo_db_user:            "odoo"
-odoo_db_password:        "{{ vault_odoo_db_password }}"
+# Le mot de passe est défini dans group_vars/all/vars.yml
+# (indirection vault) — pas de valeur en clair ici.
 
 # Chemins
 odoo_data_dir:           "/opt/odoo"

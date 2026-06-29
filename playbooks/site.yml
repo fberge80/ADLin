@@ -17,6 +17,7 @@
 
 - import_playbook: 00-common.yml  # noqa: name[play]
 - import_playbook: 01-freeipa-server.yml  # noqa: name[play]
+- import_playbook: 00b-pbx-enroll.yml  # noqa: name[play]
 
 # -----------------------------------------------------------------------------
 # Phase 2, reverse proxy + TLS

@@ -36,6 +36,8 @@ common_selinux_policy: targeted
 # NTP / Chrony
 # -----------------------------------------------------------------------------
 
+# Valeur par défaut : pool NTP public (surplanté par group_vars/all/vars.yml
+# qui pointe vers ipa01 après le déploiement FreeIPA)
 common_ntp_servers:
   - 0.fr.pool.ntp.org
   - 1.fr.pool.ntp.org
@@ -52,12 +54,16 @@ common_ntp_local_stratum: 10
 # Contrôle la gestion de chrony par ce rôle.
 # Positionné à false sur ipa01 (cf. group_vars/ipaservers.yml) car
 # FreeIPA server installer gère chrony directement.
-common_manage_ntp: true
+# Surchargé à true dans group_vars/all/vars.yml pour le cas général.
+common_manage_ntp: false
 
 # -----------------------------------------------------------------------------
 # Enrollment FreeIPA client
 # -----------------------------------------------------------------------------
 
+# Désactivé par défaut — le rôle common peut être appliqué aux VMs avant
+# que FreeIPA ne soit déployé. Surchargé à true dans group_vars/all/vars.yml
+# après le déploiement de FreeIPA.
 common_ipa_enroll: false
 # Note : ipa_domain, ipa_realm, ipa_server, ipaclient_mkhomedir,
 # ipaclient_no_nisdomain, ipaclient_force_join sont définis dans
