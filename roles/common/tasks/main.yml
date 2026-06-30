@@ -26,3 +26,12 @@
   tags: [common, freeipa, ipa]
   when: common_ipa_enroll | bool
   # Désactivé sur ipaservers : ipa01 est le serveur, pas un client
+
+- name: "Common | Démarrer qemu-guest-agent"
+  ansible.builtin.systemd:
+    name: qemu-guest-agent
+    state: started
+    enabled: true
+  tags: [common, packages]
+  # Notifié par l'installation du paquet dans packages.yml
+  # Présent ici en idempotence pour les runs ultérieurs

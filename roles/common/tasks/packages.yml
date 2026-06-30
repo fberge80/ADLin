@@ -58,3 +58,4 @@
   ansible.builtin.dnf:
     name: "{{ common_packages }}"
     state: present
+  notify: Redémarrer qemu-guest-agent

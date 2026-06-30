@@ -11,3 +11,9 @@
     msg: "Reboot requis suite au changement de mode SELinux"
     reboot_timeout: 300
   when: common_selinux_result.reboot_required | default(false)
+
+- name: Redémarrer qemu-guest-agent
+  ansible.builtin.systemd:
+    name: qemu-guest-agent
+    state: restarted
+    enabled: true

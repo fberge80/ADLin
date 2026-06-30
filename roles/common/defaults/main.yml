@@ -19,6 +19,7 @@ common_packages:
   - chrony
   - python3-libselinux  # requis par le module ansible.posix.selinux
   - python3-libsemanage  # requis par semanage (contextes SELinux)
+  - qemu-guest-agent     # monitoring PVE — IP, heartbeat, backup quiesce
 
 common_services_disabled:
   - bluetooth
